@@ -50,7 +50,7 @@ Generated datasets are excluded from Git through `.gitignore` and can be recreat
 
 ## Alignment with SOFR Futures
 
-The pipeline includes an alignment module (`fomc_data/alignment.py`) that maps SOFR futures settlement observations to upcoming FOMC meetings occurring within each contract's reference period.
+The pipeline includes an alignment module (`fomc_data/alignment.py`) that maps SOFR futures settlement observations to upcoming FOMC policy decisions based on when the decisions take effect within each contract's reference period.
 
 The alignment uses the cleaned SOFR futures dataset produced by Issue #1:
 
@@ -59,7 +59,11 @@ The alignment uses the cleaned SOFR futures dataset produced by Issue #1:
 For each futures observation, the function identifies FOMC meetings satisfying:
 
 - The FOMC announcement date is strictly after the futures observation date.
-- The meeting date falls within the contract's reference period, including its boundaries.
+- The policy `effective_date` falls within the contract's reference period, including its boundaries.
+
+The `meeting_date` is used for the pre-announcement filter (`trade_date < meeting_date`), while `effective_date` is used for contract overlap (`reference_start <= effective_date <= reference_end`). This distinction matters when an announcement occurs at the end of a month but the policy change takes effect in the next month.
+
+For hold decisions with no recorded `effective_date`, the alignment uses the next business day after the meeting as a fallback. This fallback uses pandas business-day conventions, which exclude weekends but do not explicitly account for Federal Reserve holidays. For simplified input data without an `effective_date` column, the same fallback is applied; production rate-change dates should be populated and verified against official implementation notes.
 
 The resulting dataset preserves the original futures information and attaches the realized policy decision, target-rate bounds, target midpoint, and rate change in basis points.
 
@@ -95,7 +99,7 @@ Run the automated tests:
 python -m pytest tests/test_fomc_data.py -v
 ```
 
-The tests check meeting-calendar ordering and uniqueness, acceptance of a valid policy decision, and rejection of an incorrectly calculated basis-point change.
+The seven automated tests check meeting-calendar ordering and uniqueness, acceptance of a valid policy decision, rejection of an incorrectly calculated basis-point change, and synthetic SOFR futures alignment. Alignment tests include multiple meetings within one contract, a month-end announcement whose effective date falls in the next contract period, and the fallback for a hold without a recorded effective date.
 
 These tests establish internal consistency but do not independently verify the historical policy decisions against FOMC statements.
 
@@ -103,6 +107,6 @@ These tests establish internal consistency but do not independently verify the h
 
 These datasets complement the SOFR futures settlement data collected separately through Databento.
 
-The FOMC announcement dates define the policy events, while the realized target rates provide the outcomes against which market-implied expectations can be evaluated.
+The FOMC announcement dates define the policy events and the pre-announcement cutoff; policy effective dates determine contract reference-period overlap. Realized target rates provide the outcomes against which market-implied expectations can be evaluated.
 
 Forecast comparisons must use information available before each FOMC announcement to avoid look-ahead bias.

@@ -141,3 +141,48 @@ def test_align_multiple_fomc_meetings():
                                                 pd.Timestamp("2024-06-12")]
 
     assert (aligned["contract_id"] == "SR3_EXAMPLE").all()
+
+
+def test_align_uses_effective_date_across_month_boundary():
+    """
+    A month-end announcement effective next month belongs to next month.
+    """
+    futures = pd.DataFrame([{"trade_date": "2024-01-30", 
+                             "contract_id": "SR1_JAN24", 
+                             "reference_start": "2024-01-01", 
+                             "reference_end": "2024-01-31"},
+                            {"trade_date": "2024-01-30", 
+                             "contract_id": "SR1_FEB24",
+                             "reference_start": "2024-02-01", 
+                             "reference_end": "2024-02-29"}])
+    fomc = pd.DataFrame([{"meeting_date": "2024-01-31", 
+                          "effective_date": "2024-02-01",
+                          "target_lower_after": 5.00, 
+                          "target_upper_after": 5.25,
+                          "change_bps": -25.0, 
+                          "decision": "cut"}])
+
+    aligned = align_fomc_with_futures(futures, fomc)
+
+    assert aligned["contract_id"].tolist() == ["SR1_FEB24"]
+    assert aligned.iloc[0]["effective_date"] == pd.Timestamp("2024-02-01")
+
+
+def test_align_hold_falls_back_to_next_business_day():
+    """
+    A Friday hold uses Monday as the alignment date.
+    """
+    futures = pd.DataFrame([{"trade_date": "2024-03-28", 
+                             "contract_id": "SR1_APR24", 
+                             "reference_start": "2024-04-01", 
+                             "reference_end": "2024-04-30"}])
+    fomc = pd.DataFrame([{"meeting_date": "2024-03-29", 
+                          "effective_date": pd.NaT, 
+                          "target_lower_after": 5.25, 
+                          "target_upper_after": 5.50,
+                          "change_bps": 0.0, "decision": "hold"}])
+
+    aligned = align_fomc_with_futures(futures, fomc)
+
+    assert len(aligned) == 1
+    assert aligned.iloc[0]["effective_date"] == pd.Timestamp("2024-04-01")

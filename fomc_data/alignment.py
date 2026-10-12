@@ -6,15 +6,14 @@ import pandas as pd
 
 def align_fomc_with_futures(futures, fomc):
     """
-    Aligns SOFR futures observations with upcoming FOMC meetings that fall
-    within each contract's reference period.
+    Align upcoming FOMC decisions by the date their policy takes effect.
 
     Parameters:
-    - futures (pd.DataFrame): contains SOFR futures settlement observations
-    - fomc (pd.DataFrame): contains FOMC meeting dates and realized rate decisions
+    - futures (pd.DataFrame): SOFR futures settlement observations
+    - fomc (pd.DataFrame): FOMC meeting dates and realized policy decisions
 
-    Returns (pd.DataFrame): with matched futures observations and FOMC meetings,
-    including realized policy rate changes and target midpoints
+    Returns (pd.DataFrame): Matched futures observations and FOMC meetings,
+    including realized target midpoints and changes in basis points.
     """
     required_futures = {"trade_date",
                         "contract_id",
@@ -35,40 +34,50 @@ def align_fomc_with_futures(futures, fomc):
     futures = futures.copy()
     fomc = fomc.copy()
 
-    for col in ("trade_date", "reference_start", "reference_end"):
-        futures[col] = pd.to_datetime(futures[col])
+    for column in ("trade_date", "reference_start", "reference_end"):
+        futures[column] = pd.to_datetime(futures[column])
     fomc["meeting_date"] = pd.to_datetime(fomc["meeting_date"])
+    
+    #handle FOMC inputs that do not explicitly include effective dates.
+    if "effective_date" not in fomc.columns:
+        fomc["effective_date"] = pd.NaT
+    fomc["effective_date"] = pd.to_datetime(fomc["effective_date"])
+
+    #holds have no rate-change effective date; use the next business day.
+    #BDay accounts for weekends but not market holidays.
+    missing_effective_date = fomc["effective_date"].isna()
+    fomc.loc[missing_effective_date, "effective_date"] = (fomc.loc[missing_effective_date, "meeting_date"] + pd.offsets.BDay(1))
 
     if fomc["meeting_date"].duplicated().any():
         raise ValueError("Duplicate FOMC meeting dates")
-    #sort meetings chronologically.
-    fomc = fomc.sort_values("meeting_date").reset_index(drop=True)
 
-    #match each futures observation to relevant meetings.
+    #only pre-announcement observations qualify as forecasts.
+    #contract overlap is determined by policy effective date, not announcement date.
+    fomc = fomc.sort_values("meeting_date").reset_index(drop = True)
     matched = []
 
     for _, meeting in fomc.iterrows():
-        date = meeting["meeting_date"]
+        meeting_date = meeting["meeting_date"]
+        effective_date = meeting["effective_date"]
 
-        mask = ((futures["trade_date"] < date)
-                & (futures["reference_start"] <= date)
-                & (futures["reference_end"] >= date))
+        mask = ((futures["trade_date"] < meeting_date)
+                & (futures["reference_start"] <= effective_date)
+                & (futures["reference_end"] >= effective_date))
 
         subset = futures.loc[mask].copy()
-
         if subset.empty:
             continue
 
-        for col in fomc.columns:
-            subset[col] = meeting[col]
+        for column in fomc.columns:
+            subset[column] = meeting[column]
 
         matched.append(subset)
 
     if not matched:
-        return pd.DataFrame(columns = [*futures.columns, *[col for col in fomc.columns if col not in futures.columns],
+        return pd.DataFrame(columns = [*futures.columns, *[column for column in fomc.columns if column not in futures.columns],
                                        "realized_target_midpoint", "realized_change_bps"])
 
-    aligned = pd.concat(matched, ignore_index=True)
+    aligned = pd.concat(matched, ignore_index = True)
 
     aligned["realized_target_midpoint"] = (aligned["target_lower_after"] + aligned["target_upper_after"]) / 2
 

@@ -123,7 +123,7 @@ The project will be developed in the following stages, with detailed tasks and p
 
 ## How to Run
 
-*Planned: no code exists yet. These steps describe how the project is intended to run once each stage is implemented.*
+*Status: so far only the issue #5 evaluation code exists (see [FORECAST_EVAL.md](FORECAST_EVAL.md)); the other stages are not implemented yet. These steps describe how the full project is intended to run.*
 
 1. Use Python 3.12 or newer.
 2. Install the project dependencies, including the course package [`finm37000`](https://github.com/pattersonem/finm37000-autumn-2026).

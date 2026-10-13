@@ -49,7 +49,8 @@ from forecast_eval.inputs import (
 MAX_HORIZON = 6
 DIRECTION_THRESHOLD_BPS = 12.5
 
-# Regimes for the split table, by observation date. Inclusive (start, end) dates.
+# Regimes for the split table, by the date of the meeting being forecast.
+# Inclusive (start, end) dates.
 DEFAULT_REGIMES = {
     "2022-23 hikes": ("2022-01-01", "2023-12-31"),
     "2024-25 cuts": ("2024-01-01", "2025-12-31"),
@@ -201,10 +202,13 @@ def error_by_days_to_meeting(errors, horizon=1, bins=DEFAULT_DAY_BINS):
 
 
 def summarize_by_regime(errors, regimes=None):
-    """Accuracy by (regime, horizon). A row's regime is set by its observation date.
+    """Accuracy by (regime, horizon). A row's regime is set by the date of the
+    meeting being forecast (meeting_date), not the observation date.
 
+    The outcome decides the regime: at 6 meetings ahead, a forecast made in
+    late 2023 for a 2024 cut belongs with the cuts, not the hikes.
     `regimes` maps a name to inclusive (start, end) dates; the default is
-    DEFAULT_REGIMES. Observation dates outside every regime are left out.
+    DEFAULT_REGIMES. Meetings outside every regime are left out.
     """
     regimes = DEFAULT_REGIMES if regimes is None else regimes
     # Check the date ranges: each must be in order and no two may overlap.
@@ -218,7 +222,7 @@ def summarize_by_regime(errors, regimes=None):
 
     regime = pd.Series(pd.NA, index=errors.index, dtype=object)
     for name, (start, end) in regimes.items():
-        regime[errors[OBS_DATE].between(pd.Timestamp(start), pd.Timestamp(end))] = name
+        regime[errors[MEETING_DATE].between(pd.Timestamp(start), pd.Timestamp(end))] = name
     # Keep the regimes in the order given rather than alphabetical order.
     regime = pd.Categorical(regime, categories=list(regimes), ordered=True)
     labelled = errors.assign(regime=regime).dropna(subset=["regime"])

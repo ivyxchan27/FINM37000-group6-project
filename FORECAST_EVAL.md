@@ -31,7 +31,9 @@ compared instead of levels, so a steady SOFR-policy-rate basis cancels out.
   move becomes more likely than no move. The threshold is a parameter.
 - **Days to meeting**: calendar days from *t* to the meeting, bucketed (1-7, 8-14, 15-21, 22-28,
   29-42, 43+ by default) for horizon 1.
-- **Regimes** (by observation date, parameters): 2022-23 hikes, 2024-25 cuts, 2026.
+- **Regimes** (parameters): 2022-23 hikes, 2024-25 cuts, 2026, assigned by the date of the meeting
+  being forecast, not the observation date. At 6 meetings ahead the two can fall in different
+  regimes (a late-2023 forecast of a 2024 cut counts as a cut-regime forecast).
 
 Each table also reports `n_meetings`, the number of distinct target meetings. Forecasts made on
 different days for the same meeting share one outcome, so their errors are strongly correlated and

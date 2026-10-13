@@ -203,9 +203,22 @@ def test_regime_split():
 
     assert table.index.get_level_values("regime").unique().tolist() == ["early", "late"]
     np.testing.assert_allclose(table["bias_bps"], 2.0)
-    # Rows before 2022 fall outside both regimes and are left out.
-    in_regimes = errors["obs_date"] >= "2022-01-01"
-    assert table["n_obs"].sum() == in_regimes.sum()
+    # Every synthetic meeting is inside one of the two regimes, so no row is dropped.
+    assert table["n_obs"].sum() == len(errors)
+
+
+def test_regime_follows_meeting_date_not_obs_date():
+    # Observed in 2022 (regime "a") but forecasting the 2023 meeting (regime "b").
+    realized = pd.DataFrame({"meeting_date": pd.to_datetime(["2022-12-14", "2023-02-01"]),
+                             "change_bps": [50.0, 25.0]})
+    implied = implied_rows([
+        ("2022-12-01", "2022-12-14", 50.0),  # horizon 1: 2022 meeting -> regime "a"
+        ("2022-12-01", "2023-02-01", 85.0),  # horizon 2: 2023 meeting -> regime "b", error +10
+    ])
+    regimes = {"a": ("2022-01-01", "2022-12-31"), "b": ("2023-01-01", "2023-12-31")}
+    table = summarize_by_regime(build_forecast_errors(implied, realized), regimes=regimes)
+    assert table.index.tolist() == [("a", 1), ("b", 2)]
+    assert table.loc[("b", 2), "bias_bps"] == 10.0
 
 
 def test_overlapping_regimes_rejected():

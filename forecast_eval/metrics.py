@@ -225,7 +225,19 @@ def error_by_days_to_meeting(errors, horizon=1, bins=DEFAULT_DAY_BINS, open_ende
     labels = [f"{lo + 1}-{hi}" for lo, hi in zip(bins[:-1], bins[1:])]
     if open_ended:
         labels[-1] = f"{bins[-2] + 1}+"
-    buckets = pd.cut(subset["days_to_meeting"], bins=bins, labels=labels)
+    days = subset["days_to_meeting"]
+    if open_ended:
+        bins = list(bins)
+        bins[-1] = np.inf
+        buckets = pd.cut(days, bins=bins, labels=labels)
+    else:
+        outside = (days <= bins[0]) | (days > bins[-1])
+        if outside.any():
+            raise ValueError(
+                f"days_to_meeting falls outside the supplied bin edges "
+                f"({bins[0]}, {bins[-1]}]; pass open_ended=True or a wider `bins`"
+            )
+        buckets = pd.cut(days, bins=bins, labels=labels)
     return _summarize(subset.assign(days_bucket=buckets), "days_bucket")
 
 

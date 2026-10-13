@@ -335,3 +335,22 @@ def test_no_overlap_raises_clear_error():
     implied = implied_rows([("2022-07-01", "2022-07-27", 75.0)])  # after the schedule ends
     with pytest.raises(ValueError, match="no forecast errors"):
         summarize_by_horizon(build_forecast_errors(implied, REALIZED))
+
+
+def test_open_ended_last_bucket_catches_all():
+    # bins=[0, 7, 14, 21, 28] with open_ended=True: the last edge is a
+    # catch-all, so a forecast 42 days out lands in "22+", not dropped.
+    errors = build_forecast_errors(implied_rows([("2022-05-04", "2022-06-15", 60.0)]), REALIZED)
+    assert errors["days_to_meeting"].tolist() == [42]
+    table = error_by_days_to_meeting(errors, bins=[0, 7, 14, 21, 28])
+    # Buckets with no forecasts are left out of the table.
+    assert table.index.tolist() == ["22+"]
+    assert table["n_obs"].tolist() == [1]
+
+
+def test_days_outside_closed_bins_raise():
+    # open_ended=False: every bucket must have both edges, so a forecast past
+    # the last edge is a caller error, not a silently missing row.
+    errors = build_forecast_errors(implied_rows([("2022-05-04", "2022-06-15", 60.0)]), REALIZED)
+    with pytest.raises(ValueError, match="outside the supplied bin edges"):
+        error_by_days_to_meeting(errors, bins=[0, 7, 14, 21, 28], open_ended=False)

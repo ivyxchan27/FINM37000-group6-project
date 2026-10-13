@@ -48,6 +48,10 @@ from forecast_eval.inputs import (
 
 MAX_HORIZON = 6
 DIRECTION_THRESHOLD_BPS = 12.5
+# Thresholds for the hit-rate sensitivity check. Futures may carry a risk
+# premium that shifts implied moves away from pure expectations, so we check
+# that the hit rate does not hinge on the 12.5 bp choice.
+SENSITIVITY_THRESHOLDS_BPS = (5.0, 12.5, 20.0)
 
 # Regimes for the split table, by the date of the meeting being forecast.
 # Inclusive (start, end) dates.
@@ -183,6 +187,27 @@ def _summarize(errors, by):
 def summarize_by_horizon(errors):
     """Accuracy table, one row per horizon: n_obs, n_meetings, bias, MAE, RMSE (bp), hit rate."""
     return _summarize(errors, "horizon")
+
+
+def hit_rate_sensitivity(errors, thresholds_bps=SENSITIVITY_THRESHOLDS_BPS):
+    """Direction hit rate by horizon at several hike / hold / cut thresholds.
+
+    Returns a table with one row per horizon and one column per threshold
+    (named like "hit_rate_5bp", "hit_rate_12.5bp"). The labels are recomputed
+    from the implied and realized own moves for each threshold, so the
+    `direction_hit` column of `errors` (built at the default 12.5 bp) is not used.
+    Rows whose implied own move is missing are left out, as in the main table.
+    """
+    if len(errors) == 0:
+        raise ValueError("no forecast errors to summarize; check that the implied and realized tables overlap")
+    known = errors.dropna(subset=["implied_move_bps"])
+    table = pd.DataFrame(index=pd.Index(sorted(errors["horizon"].unique()), name="horizon"))
+    for threshold in thresholds_bps:
+        implied = classify_direction(known["implied_move_bps"], threshold)
+        realized = classify_direction(known["realized_move_bps"], threshold)
+        hits = pd.Series(implied == realized, index=known.index, dtype=float)
+        table[f"hit_rate_{threshold:g}bp"] = hits.groupby(known["horizon"]).mean()
+    return table
 
 
 def error_by_days_to_meeting(errors, horizon=1, bins=DEFAULT_DAY_BINS):

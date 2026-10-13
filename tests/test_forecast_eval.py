@@ -19,6 +19,7 @@ from forecast_eval import (
     build_forecast_errors,
     classify_direction,
     error_by_days_to_meeting,
+    hit_rate_sensitivity,
     make_synthetic_decisions,
     make_synthetic_implied_paths,
     plot_error_by_horizon,
@@ -122,6 +123,31 @@ def test_direction_miss_counts_against_hit_rate():
     assert errors.loc[0, "implied_direction"] == "hold"
     assert errors.loc[0, "direction_hit"] == False  # noqa: E712 (value is a numpy/pandas bool)
     assert summarize_by_horizon(errors).loc[1, "hit_rate"] == 0.0
+
+
+def test_hit_rate_sensitivity_by_threshold():
+    # Implied own moves 20, 5, 30 vs realized 25, 0, 50 (as in test_hand_example_errors),
+    # plus a second day with own moves 8 and 4 at horizons 1 and 2.
+    implied = implied_rows([
+        ("2022-03-01", "2022-03-16", 20.0), ("2022-03-01", "2022-05-04", 25.0), ("2022-03-01", "2022-06-15", 55.0),
+        ("2022-03-02", "2022-03-16", 8.0), ("2022-03-02", "2022-05-04", 12.0),
+    ])
+    table = hit_rate_sensitivity(build_forecast_errors(implied, REALIZED))
+    assert table.columns.tolist() == ["hit_rate_5bp", "hit_rate_12.5bp", "hit_rate_20bp"]
+    # Horizon 1 (realized hike): own moves 20 and 8.
+    #   5 bp: both hikes -> 1.0;  12.5 bp: 20 hike, 8 hold -> 0.5;  20 bp: both holds -> 0.0.
+    assert table.loc[1].tolist() == [1.0, 0.5, 0.0]
+    # Horizon 2 (realized hold): own moves 5 and 4 -> hold at every threshold.
+    assert table.loc[2].tolist() == [1.0, 1.0, 1.0]
+    # Horizon 3 (realized +50): own move 30 -> hike at every threshold.
+    assert table.loc[3].tolist() == [1.0, 1.0, 1.0]
+
+
+def test_hit_rate_sensitivity_matches_main_table_at_default():
+    realized = make_synthetic_decisions()
+    errors = build_forecast_errors(make_synthetic_implied_paths(realized, noise_bps=10.0, seed=3), realized)
+    np.testing.assert_allclose(hit_rate_sensitivity(errors)["hit_rate_12.5bp"],
+                               summarize_by_horizon(errors)["hit_rate"])
 
 
 def test_missing_previous_meeting_leaves_direction_unknown():

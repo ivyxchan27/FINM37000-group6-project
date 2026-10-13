@@ -29,6 +29,8 @@ compared instead of levels, so a steady SOFR-policy-rate basis cancels out.
   through *h* − 1) and its realized move are each labelled hike (> +12.5 bp), cut (< −12.5 bp) or
   hold; a hit is when the labels agree. 12.5 bp is half a standard 25 bp move, the point where a
   move becomes more likely than no move. The threshold is a parameter.
+  `hit_rate_sensitivity` reports the hit rate at 5, 12.5 and 20 bp as a check, since a risk premium
+  in futures prices can push implied moves away from pure expectations.
 - **Days to meeting**: calendar days from *t* to the meeting, bucketed (1-7, 8-14, 15-21, 22-28,
   29-42, 43+ by default) for horizon 1.
 - **Regimes** (parameters): 2022-23 hikes, 2024-25 cuts, 2026, assigned by the date of the meeting
@@ -72,12 +74,13 @@ horizons are counted on it.
 
 ```python
 from forecast_eval import (build_forecast_errors, summarize_by_horizon, error_by_days_to_meeting,
-                           summarize_by_regime, plot_error_by_horizon)
+                           summarize_by_regime, hit_rate_sensitivity, plot_error_by_horizon)
 
 errors = build_forecast_errors(implied, realized)   # one row per (obs_date, horizon)
 summarize_by_horizon(errors)                        # n_obs, n_meetings, bias, MAE, RMSE, hit rate
 error_by_days_to_meeting(errors, horizon=1)         # accuracy as the meeting approaches
 summarize_by_regime(errors)                         # same statistics by (regime, horizon)
+hit_rate_sensitivity(errors)                        # hit rate at 5, 12.5 and 20 bp
 plot_error_by_horizon(errors).savefig("forecast_error_by_horizon.png")   # chart for #7
 ```
 

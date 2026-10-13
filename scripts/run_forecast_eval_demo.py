@@ -17,6 +17,7 @@ import pandas as pd
 from forecast_eval import (
     build_forecast_errors,
     error_by_days_to_meeting,
+    hit_rate_sensitivity,
     make_synthetic_decisions,
     make_synthetic_implied_paths,
     summarize_by_horizon,
@@ -44,6 +45,8 @@ def main():
     print(f"Injected noise s.d. by horizon (bp): {NOISE_BPS}\n")
     print("Accuracy by horizon (meetings ahead):")
     print(summarize_by_horizon(errors), "\n")
+    print("Direction hit rate at different hike / hold / cut thresholds:")
+    print(hit_rate_sensitivity(errors), "\n")
     print("Horizon 1 accuracy by calendar days before the meeting:")
     print(error_by_days_to_meeting(errors, horizon=1), "\n")
     print("Accuracy by regime and horizon:")

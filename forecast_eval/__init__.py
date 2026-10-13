@@ -21,7 +21,10 @@ from forecast_eval.metrics import (
     weekly_day_bins,
 )
 from forecast_eval.plots import plot_error_by_days_to_meeting, plot_error_by_horizon
-from forecast_eval.synthetic import make_synthetic_decisions, make_synthetic_implied_paths
+from forecast_eval.synthetic import (
+    make_synthetic_decisions,
+    make_synthetic_implied_paths,
+)
 
 __all__ = [
     "DEFAULT_DAY_BINS",

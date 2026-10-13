@@ -3,7 +3,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from forecast_eval.metrics import error_by_days_to_meeting, summarize_by_horizon, weekly_day_bins
+from forecast_eval.metrics import (
+    error_by_days_to_meeting,
+    summarize_by_horizon,
+    weekly_day_bins,
+)
 
 
 def plot_error_by_horizon(errors, title="SOFR-implied Fed path: forecast error by horizon"):

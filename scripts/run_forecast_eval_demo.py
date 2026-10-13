@@ -55,8 +55,7 @@ def main():
     if args.plot:
         import matplotlib
         matplotlib.use("Agg")  # write to a file without opening a window
-        from forecast_eval import plot_error_by_horizon
-        from forecast_eval import plot_error_by_days_to_meeting
+        from forecast_eval import plot_error_by_days_to_meeting, plot_error_by_horizon
         plot_error_by_horizon(errors).savefig(args.plot, dpi=150)
         weekly_path = args.plot.rsplit(".", 1)[0] + "_by_week.png"
         plot_error_by_days_to_meeting(errors).savefig(weekly_path, dpi=150)

@@ -14,7 +14,13 @@ error and the RMSE is close to sqrt(bias^2 + noise^2). The tests rely on this.
 import numpy as np
 import pandas as pd
 
-from forecast_eval.inputs import IMPLIED_CUM, MEETING_DATE, OBS_DATE, REALIZED_CHANGE, validate_realized_decisions
+from forecast_eval.inputs import (
+    IMPLIED_CUM,
+    MEETING_DATE,
+    OBS_DATE,
+    REALIZED_CHANGE,
+    validate_realized_decisions,
+)
 
 
 def make_synthetic_decisions(start="2022-01-26", n_meetings=38, weeks_apart=6):

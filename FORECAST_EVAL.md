@@ -32,7 +32,8 @@ compared instead of levels, so a steady SOFR-policy-rate basis cancels out.
   `hit_rate_sensitivity` reports the hit rate at 5, 12.5 and 20 bp as a check, since a risk premium
   in futures prices can push implied moves away from pure expectations.
 - **Days to meeting**: calendar days from *t* to the meeting, bucketed (1-7, 8-14, 15-21, 22-28,
-  29-42, 43+ by default) for horizon 1.
+  29-42, 43+ by default) for horizon 1. The chart for #7 (`plot_error_by_days_to_meeting`) uses evenly spaced
+  7-day buckets instead, which are easier to read on an axis.
 - **Regimes** (parameters): 2022-23 hikes, 2024-25 cuts, 2026, assigned by the date of the meeting
   being forecast, not the observation date. At 6 meetings ahead the two can fall in different
   regimes (a late-2023 forecast of a 2024 cut counts as a cut-regime forecast).
@@ -74,7 +75,8 @@ horizons are counted on it.
 
 ```python
 from forecast_eval import (build_forecast_errors, summarize_by_horizon, error_by_days_to_meeting,
-                           summarize_by_regime, hit_rate_sensitivity, plot_error_by_horizon)
+                           summarize_by_regime, hit_rate_sensitivity, plot_error_by_horizon,
+                           plot_error_by_days_to_meeting)
 
 errors = build_forecast_errors(implied, realized)   # one row per (obs_date, horizon)
 summarize_by_horizon(errors)                        # n_obs, n_meetings, bias, MAE, RMSE, hit rate
@@ -82,6 +84,7 @@ error_by_days_to_meeting(errors, horizon=1)         # accuracy as the meeting ap
 summarize_by_regime(errors)                         # same statistics by (regime, horizon)
 hit_rate_sensitivity(errors)                        # hit rate at 5, 12.5 and 20 bp
 plot_error_by_horizon(errors).savefig("forecast_error_by_horizon.png")   # chart for #7
+plot_error_by_days_to_meeting(errors).savefig("error_by_week.png")    # weekly bins, for #7
 ```
 
 `make_synthetic_decisions` and `make_synthetic_implied_paths` (in `forecast_eval/synthetic.py`) are
@@ -95,7 +98,7 @@ From the repository root, with Python 3.12 and `pip install -r requirements.txt`
 ```bash
 python -m pytest tests/test_forecast_eval.py -v                 # unit tests
 python -m scripts.run_forecast_eval_demo                        # tables on synthetic data
-python -m scripts.run_forecast_eval_demo --plot error_by_horizon.png   # also save the chart
+python -m scripts.run_forecast_eval_demo --plot error_by_horizon.png   # also save both charts
 ```
 
 No network access or data files are needed.

@@ -3,7 +3,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from forecast_eval.metrics import summarize_by_horizon
+from forecast_eval.metrics import error_by_days_to_meeting, summarize_by_horizon, weekly_day_bins
 
 
 def plot_error_by_horizon(errors, title="SOFR-implied Fed path: forecast error by horizon"):
@@ -41,5 +41,34 @@ def plot_error_by_horizon(errors, title="SOFR-implied Fed path: forecast error b
     for ax in (ax_box, ax_stats):
         ax.grid(axis="y", alpha=0.3)
     fig.suptitle(title)
+    fig.tight_layout()
+    return fig
+
+
+def plot_error_by_days_to_meeting(errors, horizon=1, width_days=7,
+                                  title="SOFR-implied Fed path: error by days before the meeting"):
+    """Return a matplotlib Figure of MAE, RMSE and bias against days before the meeting.
+
+    Uses evenly spaced buckets of `width_days` days (weekly by default) at one
+    horizon, so the x-axis reads as "weeks before the meeting". Empty buckets
+    are left out. The caller decides whether to show or save it.
+    """
+    bins = weekly_day_bins(errors, horizon=horizon, width_days=width_days)
+    table = error_by_days_to_meeting(errors, horizon=horizon, bins=bins, open_ended=False)
+    positions = np.arange(len(table))
+
+    fig, ax = plt.subplots(figsize=(8, 4.5))
+    ax.plot(positions, table["mae_bps"], marker="o", label="MAE")
+    ax.plot(positions, table["rmse_bps"], marker="s", label="RMSE")
+    ax.plot(positions, table["bias_bps"], marker="^", linestyle="--", label="Bias (mean error)")
+    ax.axhline(0, color="black", linewidth=0.8)
+    ax.set_xticks(positions)
+    ax.set_xticklabels(table.index.astype(str))
+    ax.invert_xaxis()  # read left to right as the meeting gets closer
+    ax.set_xlabel(f"Calendar days before the meeting ({width_days}-day buckets, horizon {horizon})")
+    ax.set_ylabel("bp")
+    ax.grid(axis="y", alpha=0.3)
+    ax.legend()
+    ax.set_title(title)
     fig.tight_layout()
     return fig

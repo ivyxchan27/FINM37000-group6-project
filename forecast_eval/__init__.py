@@ -18,8 +18,9 @@ from forecast_eval.metrics import (
     hit_rate_sensitivity,
     summarize_by_horizon,
     summarize_by_regime,
+    weekly_day_bins,
 )
-from forecast_eval.plots import plot_error_by_horizon
+from forecast_eval.plots import plot_error_by_days_to_meeting, plot_error_by_horizon
 from forecast_eval.synthetic import make_synthetic_decisions, make_synthetic_implied_paths
 
 __all__ = [
@@ -34,9 +35,11 @@ __all__ = [
     "hit_rate_sensitivity",
     "make_synthetic_decisions",
     "make_synthetic_implied_paths",
+    "plot_error_by_days_to_meeting",
     "plot_error_by_horizon",
     "summarize_by_horizon",
     "summarize_by_regime",
     "validate_implied_paths",
     "validate_realized_decisions",
+    "weekly_day_bins",
 ]

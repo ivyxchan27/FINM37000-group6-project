@@ -22,11 +22,13 @@ from forecast_eval import (
     hit_rate_sensitivity,
     make_synthetic_decisions,
     make_synthetic_implied_paths,
+    plot_error_by_days_to_meeting,
     plot_error_by_horizon,
     summarize_by_horizon,
     summarize_by_regime,
     validate_implied_paths,
     validate_realized_decisions,
+    weekly_day_bins,
 )
 
 # ---------------------------------------------------------------------------
@@ -218,6 +220,28 @@ def test_days_to_meeting_buckets():
     assert table.index.tolist() == ["1-7", "15+"]
     assert table.loc["1-7", "mae_bps"] == 5.0
     assert table.loc["15+", "mae_bps"] == 10.0
+
+
+def test_weekly_bins_are_evenly_spaced_and_cover_all_days():
+    implied = implied_rows([
+        ("2022-03-10", "2022-03-16", 20.0),  # 6 days ahead
+        ("2022-03-01", "2022-03-16", 15.0),  # 15 days ahead
+    ])
+    errors = build_forecast_errors(implied, REALIZED)
+    # 15 days needs three 7-day buckets: (0,7], (7,14], (14,21].
+    assert weekly_day_bins(errors) == [0, 7, 14, 21]
+    table = error_by_days_to_meeting(errors, bins=weekly_day_bins(errors), open_ended=False)
+    assert table.index.tolist() == ["1-7", "15-21"]
+
+
+def test_weekly_chart_has_one_point_per_nonempty_week():
+    realized = make_synthetic_decisions()
+    errors = build_forecast_errors(make_synthetic_implied_paths(realized, noise_bps=5.0), realized)
+    fig = plot_error_by_days_to_meeting(errors)
+    ax = fig.axes[0]
+    expected = error_by_days_to_meeting(errors, bins=weekly_day_bins(errors), open_ended=False)
+    assert [t.get_text() for t in ax.get_xticklabels()] == expected.index.tolist()
+    assert len(ax.lines[0].get_xdata()) == len(expected)
 
 
 def test_regime_split():

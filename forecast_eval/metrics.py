@@ -210,20 +210,36 @@ def hit_rate_sensitivity(errors, thresholds_bps=SENSITIVITY_THRESHOLDS_BPS):
     return table
 
 
-def error_by_days_to_meeting(errors, horizon=1, bins=DEFAULT_DAY_BINS):
+def error_by_days_to_meeting(errors, horizon=1, bins=DEFAULT_DAY_BINS, open_ended=True):
     """Accuracy at one horizon, bucketed by calendar days before the meeting.
 
     Shows how quickly the forecast improves as the meeting gets closer.
     `bins` are bucket edges in days; each bucket is (lower, upper]. Buckets
-    with no forecasts are left out of the table.
+    with no forecasts are left out of the table. With open_ended=True the last
+    bucket is labelled "N+" (its upper edge is just a catch-all); with False
+    it is labelled with both edges, as for the evenly spaced weekly bins.
     """
     subset = errors[errors["horizon"] == horizon]
     if len(subset) == 0:
         raise ValueError(f"no forecast errors at horizon {horizon}")
     labels = [f"{lo + 1}-{hi}" for lo, hi in zip(bins[:-1], bins[1:])]
-    labels[-1] = f"{bins[-2] + 1}+"  # the last bucket is open-ended
+    if open_ended:
+        labels[-1] = f"{bins[-2] + 1}+"
     buckets = pd.cut(subset["days_to_meeting"], bins=bins, labels=labels)
     return _summarize(subset.assign(days_bucket=buckets), "days_bucket")
+
+
+def weekly_day_bins(errors, horizon=1, width_days=7):
+    """Evenly spaced bucket edges (0, 7, 14, ...) covering every days_to_meeting at one horizon.
+
+    Used for the #7 chart, where equal-width buckets are easier to read than
+    the uneven table buckets.
+    """
+    days = errors.loc[errors["horizon"] == horizon, "days_to_meeting"]
+    if len(days) == 0:
+        raise ValueError(f"no forecast errors at horizon {horizon}")
+    n_buckets = int(np.ceil(days.max() / width_days))
+    return [width_days * i for i in range(n_buckets + 1)]
 
 
 def summarize_by_regime(errors, regimes=None):

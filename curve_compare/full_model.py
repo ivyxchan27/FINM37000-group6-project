@@ -19,17 +19,9 @@ deltas:
     sum_j delta_j * days_from_j_to_month_end = avg_rate * days_in_month - days_in_month * baseline
 
 With exactly one meeting in the month this has one unknown and solves
-exactly, which is the usual case (meetings are about six weeks apart). If a
-month happens to contain more than one still-unresolved meeting, the system
-is underdetermined (one equation, several unknowns); `np.linalg.lstsq`
-returns its minimum-norm solution, which is a reasonable way to split one
-month's worth of information across the meetings it cannot separate. (This
-is the "least squares when the bootstrap is ill-conditioned" case in the
-Firstmate spec.) For the ordinary one-unknown case, lstsq returns the exact
-algebraic solution, so one code path covers both.
+exactly, which is the usual case (meetings are about six weeks apart).
 """
 
-import numpy as np
 import pandas as pd
 
 
@@ -80,16 +72,14 @@ def recover_full_model_path(sr1_contracts, meeting_dates, baseline_rate, obs_dat
         breakpoints = [m for m in meeting_dates if month_start <= m <= month_end and m > obs_date]
         if not breakpoints:
             continue  # nothing new to resolve in this contract month
+        if len(breakpoints) != 1:
+            raise ValueError("SR1 contract month must contain exactly one unresolved meeting")
 
-        # Coefficient of delta_j: the number of days from meeting j through month_end,
-        # i.e. how many of the month's days already carry that meeting's new rate.
-        coeffs = np.array([(month_end - m).days + 1 for m in breakpoints], dtype=float)
-        target = np.array([avg_target * days_in_month - days_in_month * baseline])
-        solved, *_ = np.linalg.lstsq(coeffs.reshape(1, -1), target, rcond=None)
-
-        for meeting, delta in zip(breakpoints, solved):
-            deltas[meeting] = float(delta)
-        baseline = baseline + float(solved.sum())
+        meeting = breakpoints[0]
+        days_after_meeting = (month_end - meeting).days + 1
+        delta = (avg_target - baseline) * days_in_month / days_after_meeting
+        deltas[meeting] = delta
+        baseline += delta
 
     return deltas
 

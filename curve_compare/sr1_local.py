@@ -29,8 +29,3 @@ def sr1_average_rate(daily_sofr: pd.Series, start, end) -> float:
             f"{start.date()} and {end.date()}, found {len(window)}"
         )
     return float(window.mean())
-
-
-def sr1_price(daily_sofr: pd.Series, start, end) -> float:
-    """Model SR1 futures price: 100 minus the SR1 rate (see `sr1_average_rate`)."""
-    return 100.0 - sr1_average_rate(daily_sofr, start, end)

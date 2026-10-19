@@ -123,7 +123,7 @@ The project will be developed in the following stages, with detailed tasks and p
 
 ## How to Run
 
-*Planned: no code exists yet. These steps describe how the project is intended to run once each stage is implemented.*
+*The full pipeline described below is still planned. The [issue #6 comparison](CURVE_COMPARE.md) already runs on synthetic data without the course package or a Databento key.*
 
 1. Use Python 3.12 or newer.
 2. Install the project dependencies, including the course package [`finm37000`](https://github.com/pattersonem/finm37000-autumn-2026).

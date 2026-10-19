@@ -89,10 +89,11 @@ the exact true deltas when there is no noise.
 
 ## Known limitation of the simplified curve
 
-Plotting the simplified curve's implied path (`plot_sample_paths`) shows small sawtooth
-kinks at each month boundary, not a perfectly smooth line. This is an inherent property of
+Plotting the simplified curve's implied path (`plot_sample_paths`) shows small jumps
+at contract-month boundaries, not a perfectly smooth line. This is an inherent property of
 bootstrapping a *linearly interpolated* zero-rate curve (the course method's own choice of
-interpolation): the curve's local forward rate has a slope discontinuity at every node.
+interpolation): the zero rate is continuous, but its slope changes at each node, so the
+derived local forward rate can jump there.
 It is not a bug in this port; the course package's own `build_short_rate_curve` has the
 same property. A monotone-cubic interpolation would smooth it out but is not what the
 course method does.

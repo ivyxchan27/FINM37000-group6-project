@@ -11,8 +11,8 @@ def plot_sample_paths(world, obs_date, horizon_days=240,
 
     Shows directly what the comparison is about: the full model's path is a
     step function that can only move on an FOMC date, so it tracks the true
-    path exactly between meetings (noise aside); the simplified curve is
-    smooth everywhere and blurs across each meeting date.
+    path exactly between meetings (noise aside); the simplified curve
+    has no meeting-date breakpoint and blurs across each meeting date.
     """
     paths = implied_paths_for_plot(world, obs_date, horizon_days)
 

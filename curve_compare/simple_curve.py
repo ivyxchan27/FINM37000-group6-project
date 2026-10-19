@@ -23,9 +23,10 @@ shape allows; `days_per_year=360.0` matches that function's own default.
 What makes this curve "simplified" is exactly what it leaves out: nothing
 here looks at FOMC meeting dates. Each node's maturity is just its
 contract's month-end, and the zero rate is linearly interpolated between
-nodes, so the resulting curve is smooth everywhere, including across a
-meeting date where the true policy rate jumps. That smoothness is the
-property this comparison (Issue #6) is testing.
+nodes. The zero curve is continuous, but its derived forward rate can jump
+at a contract boundary; it has no meeting-date breakpoint unless a meeting
+coincides with that boundary. This lack of FOMC timing is the property this
+comparison (Issue #6) is testing.
 """
 
 import numpy as np
@@ -82,8 +83,8 @@ def simple_curve_daily_path(curve_t, curve_r, obs_date, dates, days_per_year=360
     `slope(t)` is the interpolant's slope in the segment containing `t` (zero
     outside the curve's first/last node, matching `np.interp`'s flat
     extrapolation). This is what makes the result a smooth curve rather than
-    a step function: a forward rate derived this way cannot jump at an FOMC
-    meeting date unless an SR1 contract boundary happens to fall there too.
+    a meeting-date step function: a forward rate derived this way can jump
+    at a contract boundary, but has no FOMC-specific breakpoint.
 
     Returns a daily `pd.Series` of rates in percent, indexed by `dates`.
     """

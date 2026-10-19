@@ -25,8 +25,8 @@ exactly, which is the usual case (meetings are about six weeks apart).
 import pandas as pd
 
 
-def anchor_sofr_rate(daily_sofr, obs_date, window_days=5):
-    """A short trailing average of `daily_sofr` ending at `obs_date`.
+def anchor_sofr_rate(daily_sofr, obs_date, meeting_dates, window_days=5):
+    """A short trailing average of `daily_sofr` since the latest meeting.
 
     Used as the bootstrap's starting level `baseline` instead of the single
     day's SOFR print, so that one day's idiosyncratic noise does not get
@@ -37,7 +37,9 @@ def anchor_sofr_rate(daily_sofr, obs_date, window_days=5):
     is a simple stand-in for that here.
     """
     obs_date = pd.Timestamp(obs_date)
-    window = daily_sofr.loc[:obs_date].tail(window_days)
+    latest_meeting = max((pd.Timestamp(m) for m in meeting_dates if pd.Timestamp(m) <= obs_date), default=None)
+    observations = daily_sofr.loc[:obs_date] if latest_meeting is None else daily_sofr.loc[latest_meeting:obs_date]
+    window = observations.tail(window_days)
     return float(window.mean())
 
 

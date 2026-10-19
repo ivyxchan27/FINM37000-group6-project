@@ -106,7 +106,7 @@ The project will be developed in the following stages, with detailed tasks and p
 3. Build the SOFR futures pricing framework. ([#3](https://github.com/mmiah00/FINM37000-group6-project/issues/3))
 4. Estimate market-implied Fed rate paths. ([#4](https://github.com/mmiah00/FINM37000-group6-project/issues/4))
 5. Evaluate Fed-path forecast accuracy. ([#5](https://github.com/mmiah00/FINM37000-group6-project/issues/5))
-6. Compare the full model with a simplified curve methodology. ([#6](https://github.com/mmiah00/FINM37000-group6-project/issues/6))
+6. Compare the full model with a simplified curve methodology. ([#6](https://github.com/mmiah00/FINM37000-group6-project/issues/6)) See [CURVE_COMPARE.md](CURVE_COMPARE.md).
 7. Create final visualizations and analysis. ([#7](https://github.com/mmiah00/FINM37000-group6-project/issues/7))
 8. If time permits, analyze intraday FOMC announcement reactions. ([#8](https://github.com/mmiah00/FINM37000-group6-project/issues/8))
 

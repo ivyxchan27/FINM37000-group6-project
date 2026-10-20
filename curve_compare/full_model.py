@@ -5,16 +5,15 @@ for SR1 only: the unknowns are the rate changes `delta_j` at each FOMC
 meeting date, and they are recovered one contract month at a time (a
 "bootstrap"), using the day-weighted average equation from Section 3.
 
-Within one SR1 contract month [month_start, month_end], every day's rate is
+Within one SR1 contract month [month_start, month_end], future days use
 
     rate(d) = baseline + sum(delta_j for every meeting j with month_start <= j <= d)
 
-where `baseline` is the rate already resolved by the time this month starts
-(the observed anchor rate, plus every delta already resolved in earlier
-months). Only meetings strictly after the observation date are unknown;
-summing `rate(d)` over the month and setting it equal to the observed
-day-weighted average gives ONE linear equation in the month's unknown
-deltas:
+where `baseline` is the observed anchor rate plus every delta resolved in
+earlier months. In the observation month, elapsed days instead use their
+observed SOFR fixings. Only meetings strictly after the observation date are
+unknown; setting the sum of observed and future rates equal to the SR1
+day-weighted average gives ONE linear equation in the month's unknown deltas:
 
     delta * days_from_meeting_to_month_end = avg_rate * days_in_month
         - sum(observed fixings through the observation date)

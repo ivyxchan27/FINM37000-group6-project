@@ -26,7 +26,9 @@ SR3 and multi-horizon comparisons are natural follow-ups once this scope is vali
 ## The two methods
 
 Both methods use one date's strip of SR1 settlement prices to estimate a daily
-SOFR rate path. The full model also uses meeting dates and recent SOFR fixings.
+SOFR rate path. The full model also uses meeting dates, a recent SOFR anchor
+restricted to fixings since the latest meeting, and all observed fixings in
+the elapsed part of the current contract month.
 
 - **Full model** (`full_model.py`): a step path that can only change on a scheduled FOMC
   meeting date. The size of each step is recovered one contract month at a time (a

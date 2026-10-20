@@ -97,10 +97,13 @@ remaining 474 dates (MAE 0.63 bp, RMSE 0.96 bp). Across all 494 dates, its MAE i
 1.17 bp and its RMSE is 3.43 bp. The overall accuracy table includes every date.
 
 The first meeting (2024-01-31) falls at month end, leaving only one post-meeting day
-in the January SR1 contract. The bootstrap identifies that meeting's move almost
-entirely from later contracts' pricing equations, rather than from the January
-contract itself. A real-data run should check how far the sample start precedes the
-first FOMC meeting it covers.
+in the 31-day January SR1 contract. For observations before that meeting, the bootstrap
+solves its move from the January contract alone: it divides the difference between
+the contract's total implied rate and the observed and baseline rate totals by that
+one remaining meeting day. An error in the January contract's average rate is therefore
+amplified 31 times in the inferred move; an anchor-rate error is amplified by the
+number of unobserved days. Later contracts do not revise this move. A real-data run
+should check how far the sample start precedes the first FOMC meeting it covers.
 
 ## Known limitation of the simplified curve
 

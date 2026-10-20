@@ -37,6 +37,33 @@ The core data source is Databento's CME Globex dataset (`GLBX.MDP3`): daily sett
 
 The SOFR futures data will be used to estimate the market-implied policy path, while the FOMC and realized rate data will provide the benchmark against which those expectations are evaluated.
 
+### Getting the SOFR futures data
+
+The SOFR futures settlement prices are pulled from Databento (`GLBX.MDP3`) by
+`scripts/fetch_sofr_futures.py`:
+
+```bash
+pip install -r requirements.txt
+printf '%s' 'db-YOUR_KEY_HERE' > ~/.databento_api_key && chmod 600 ~/.databento_api_key
+
+python scripts/fetch_sofr_futures.py --dry-run   # estimated cost, no charge
+python scripts/fetch_sofr_futures.py             # the real pull
+```
+
+This writes a tidy settlement panel to `data/processed/` and a data quality
+report to `reports/`. The pricing model reads it through one function:
+
+```python
+from sofr_data import load_settlements, settlement_curve
+
+panel = load_settlements()
+curve = settlement_curve(panel, "2024-05-30")   # one day's chain, ready to fit
+```
+
+**See [DATA.md](DATA.md)** for the output schema, the SR1 and SR3 settlement
+conventions, the quality checks, and why settlements come from the `statistics`
+schema rather than daily OHLCV.
+
 ## Methodology
 
 A key challenge is that SOFR futures contracts do not directly report the expected federal funds rate at individual FOMC meetings.
@@ -101,11 +128,22 @@ The final project will produce:
 4. A comparison between the full methodology and a simplified SOFR curve approach.
 5. If completed, an intraday analysis of market reactions to FOMC announcements.
 
+## Repository Layout
+
+| Path | Contents |
+| --- | --- |
+| `sofr_data/` | Data collection and cleaning package |
+| `scripts/fetch_sofr_futures.py` | Pulls and cleans the SOFR futures data |
+| `tests/` | Tests, runnable without a Databento key |
+| `data/` | Pulled and processed data (gitignored) |
+| `reports/` | Generated data quality reports |
+| `DATA.md` | SOFR futures data dictionary and conventions |
+
 ## Project Roadmap
 
 The project will be developed in the following stages, with detailed tasks and progress tracked through GitHub Issues:
 
-1. Collect and clean SOFR futures data. ([#1](https://github.com/mmiah00/FINM37000-group6-project/issues/1))
+1. Collect and clean SOFR futures data, see [DATA.md](DATA.md). ([#1](https://github.com/mmiah00/FINM37000-group6-project/issues/1))
 2. Collect FOMC meeting and realized rate data. ([#2](https://github.com/mmiah00/FINM37000-group6-project/issues/2))
 3. Build the SOFR futures pricing framework. ([#3](https://github.com/mmiah00/FINM37000-group6-project/issues/3))
 4. Estimate market-implied Fed rate paths. ([#4](https://github.com/mmiah00/FINM37000-group6-project/issues/4))
@@ -127,6 +165,7 @@ The project will be developed in the following stages, with detailed tasks and p
 
 ## How to Run
 
+*Stage 1 (SOFR futures data collection) is implemented; see [Getting the SOFR futures data](#getting-the-sofr-futures-data) and [DATA.md](DATA.md). The remaining stages are planned, and these steps describe how the project is intended to run once each is implemented.*
 *Status: so far only the issue #5 evaluation code exists (see [FORECAST_EVAL.md](FORECAST_EVAL.md)); the other stages are not implemented yet. These steps describe how the full project is intended to run.*
 
 1. Use Python 3.12 or newer.

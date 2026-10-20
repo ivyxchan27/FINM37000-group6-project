@@ -89,44 +89,18 @@ prices from a known path, then check that the method recovers it — see Section
 `docs/METHODOLOGY.md`). `tests/test_curve_compare.py` checks that the full model recovers
 the exact true deltas when there is no noise.
 
-## Accuracy before the first meeting
+## Error before the first meeting
 
-`anchor_sofr_rate` anchors the full model's bootstrap to SOFR fixings since the LATEST
-PAST meeting. Before the first scheduled meeting there is no past meeting, so the anchor
-is just a short trailing average of daily SOFR with nothing pinning it to the true policy
-level — a harder, qualitatively different case than the rest of the sample, where every
-observation date has a real predecessor meeting. `default_obs_dates` starts its window 30
-days before the first meeting (matching the real sample, where observations start a few
-weeks before an FOMC decision), so this stretch makes up part of every demo run; the real
-data starts a similar distance before its first meeting (2022-01-26).
+On the seeded demo run, the full model's error is concentrated on the 20 observation
+dates before the first meeting (MAE 13.79 bp, RMSE 16.37 bp), compared with the
+remaining 474 dates (MAE 0.63 bp, RMSE 0.96 bp). Across all 494 dates, its MAE is
+1.17 bp and its RMSE is 3.43 bp. The overall accuracy table includes every date.
 
-`run_curve_compare_demo` reports the next-meeting accuracy table twice: once overall, and
-once with observation dates before the first meeting excluded
-(`summarize_errors_excluding_before_first_meeting`), so the headline numbers are not
-dominated by that pre-meeting stretch. On the default seeded world (`anchor_window_days=5`):
-
-| | n_obs | full_model MAE (bp) | full_model RMSE (bp) |
-| --- | --- | --- | --- |
-| Overall | 494 | 1.17 | 3.43 |
-| Excluding before 1st meeting | 474 | 0.63 | 0.96 |
-
-The simplified curve's error is essentially unchanged either way (its bootstrap does not
-use an anchor), so only the full model's row moves.
-
-Widening `anchor_window_days` (the trailing-average length) also helps, as a one-parameter
-change, by averaging out more of the daily SOFR noise before the first meeting arrives.
-Trying `anchor_window_days=20` instead of the default 5 on the same seeded world:
-
-| anchor_window_days | Overall MAE / RMSE (bp) | Excluding before 1st meeting MAE / RMSE (bp) |
-| --- | --- | --- |
-| 5 (default) | 1.17 / 3.43 | 0.63 / 0.96 |
-| 20 | 0.86 / 2.66 | 0.48 / 0.69 |
-
-This is a real improvement with no identified downside (the window is already restricted
-to fixings after the latest past meeting, so widening it cannot reach across a meeting
-boundary), but it is reported here rather than adopted as the new default: validating a
-wider window belongs with the real SR1 settlements the anchor will actually be computed
-from (#1/#4), not with this synthetic-data demo's noise level.
+The first meeting (2024-01-31) falls at month end, leaving only one post-meeting day
+in the January SR1 contract. The bootstrap identifies that meeting's move almost
+entirely from later contracts' pricing equations, rather than from the January
+contract itself. A real-data run should check how far the sample start precedes the
+first FOMC meeting it covers.
 
 ## Known limitation of the simplified curve
 

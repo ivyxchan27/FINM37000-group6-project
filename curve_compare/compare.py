@@ -108,22 +108,6 @@ def summarize_errors(results):
     return pd.DataFrame(rows).T
 
 
-def summarize_errors_excluding_before_first_meeting(results, world):
-    """`summarize_errors`, dropping observation dates before the first scheduled meeting.
-
-    `anchor_sofr_rate` anchors the bootstrap to SOFR fixings since the LATEST
-    PAST meeting; before the first meeting there is no past meeting, so the
-    anchor is just a short trailing average with nothing pinning it to the
-    true policy level. That makes this stretch a harder, qualitatively
-    different case than the rest of the sample (every real meeting has a
-    predecessor), so the headline numbers are also reported with it excluded;
-    see CURVE_COMPARE.md "Accuracy before the first meeting".
-    """
-    first_meeting = pd.Timestamp(world.meeting_dates[0])
-    after_first_meeting = results[results["obs_date"] >= first_meeting]
-    return summarize_errors(after_first_meeting)
-
-
 def method_difference_bps(results):
     """simple_curve error minus full_model error, in bp, for each observation."""
     return results["simple_curve_error_bps"] - results["full_model_error_bps"]

@@ -24,7 +24,6 @@ from curve_compare import (
     summarize_by_days_to_meeting,
     summarize_by_regime,
     summarize_errors,
-    summarize_errors_excluding_before_first_meeting,
 )
 
 
@@ -43,14 +42,8 @@ def main():
     print(f"Meeting dates: {[d.date().isoformat() for d in world.meeting_dates]}")
     print(f"Moves (bp): {world.moves_bps.tolist()}\n")
 
-    print("Next-meeting-horizon accuracy, full model vs. simplified curve (overall):")
+    print("Next-meeting-horizon accuracy, full model vs. simplified curve:")
     print(summarize_errors(results), "\n")
-
-    print(
-        "Same accuracy, excluding observation dates before the first meeting\n"
-        "(no past meeting to anchor the full model's bootstrap yet; see CURVE_COMPARE.md):"
-    )
-    print(summarize_errors_excluding_before_first_meeting(results, world), "\n")
 
     print("Accuracy by whether the next meeting was a rate change or a hold:")
     print(summarize_by_regime(results), "\n")

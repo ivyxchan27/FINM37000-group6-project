@@ -14,7 +14,6 @@ from curve_compare.compare import (
     summarize_by_days_to_meeting,
     summarize_by_regime,
     summarize_errors,
-    summarize_errors_excluding_before_first_meeting,
 )
 from curve_compare.full_model import anchor_sofr_rate, implied_daily_path, recover_full_model_path
 from curve_compare.plots import plot_error_by_days_to_meeting, plot_sample_paths
@@ -36,7 +35,6 @@ __all__ = [
     "compare_at_date",
     "run_comparison",
     "summarize_errors",
-    "summarize_errors_excluding_before_first_meeting",
     "method_difference_bps",
     "summarize_by_regime",
     "summarize_by_days_to_meeting",

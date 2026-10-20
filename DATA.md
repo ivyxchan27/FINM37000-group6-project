@@ -134,7 +134,7 @@ Run automatically; written to `reports/`. Thresholds are in `sofr_data/config.py
 | --- | --- |
 | Coverage | Trade dates missing against a CME calendar (US federal holidays plus Good Friday) |
 | Duplicates | Repeated `(trade_date, contract_id)` |
-| Missing settlements | No final settlement on a day the contract had open interest |
+| Missing settlements | No settlement on a day the contract had open interest |
 | Price bounds | Settlements outside 80–102, i.e. implied rates outside −2% to 20% |
 | Rate jumps | Day-over-day implied-rate moves above 50bp |
 | Stale prices | Settlements unchanged for 10 or more consecutive trading days |

@@ -16,7 +16,9 @@ summing `rate(d)` over the month and setting it equal to the observed
 day-weighted average gives ONE linear equation in the month's unknown
 deltas:
 
-    sum_j delta_j * days_from_j_to_month_end = avg_rate * days_in_month - days_in_month * baseline
+    delta * days_from_meeting_to_month_end = avg_rate * days_in_month
+        - sum(observed fixings through the observation date)
+        - baseline * remaining_days
 
 With exactly one meeting in the month this has one unknown and solves
 exactly, which is the usual case (meetings are about six weeks apart).
@@ -43,7 +45,7 @@ def anchor_sofr_rate(daily_sofr, obs_date, meeting_dates, window_days=5):
     return float(window.mean())
 
 
-def recover_full_model_path(sr1_contracts, meeting_dates, baseline_rate, obs_date):
+def recover_full_model_path(sr1_contracts, meeting_dates, baseline_rate, obs_date, daily_sofr):
     """Bootstrap the rate change at every meeting covered by `sr1_contracts`.
 
     Parameters
@@ -53,6 +55,7 @@ def recover_full_model_path(sr1_contracts, meeting_dates, baseline_rate, obs_dat
     meeting_dates : every scheduled FOMC meeting date (past and future).
     baseline_rate : the anchor rate in force at `obs_date` (see `anchor_sofr_rate`).
     obs_date : the observation date; only meetings strictly after it are unknown.
+    daily_sofr : observed daily SOFR fixings through `obs_date`.
 
     Returns
     -------
@@ -84,7 +87,12 @@ def recover_full_model_path(sr1_contracts, meeting_dates, baseline_rate, obs_dat
 
         meeting = breakpoints[0]
         days_after_meeting = (month_end - meeting).days + 1
-        delta = (avg_target - baseline) * days_in_month / days_after_meeting
+        observed = daily_sofr.loc[month_start:obs_date] if month_start <= obs_date else daily_sofr.iloc[:0]
+        observed_days = (obs_date - month_start).days + 1 if month_start <= obs_date else 0
+        if len(observed) != observed_days:
+            raise ValueError("missing observed daily SOFR fixings in SR1 contract month")
+        remaining_days = days_in_month - observed_days
+        delta = (avg_target * days_in_month - observed.sum() - baseline * remaining_days) / days_after_meeting
         deltas[meeting] = delta
         baseline += delta
 

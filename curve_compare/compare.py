@@ -58,7 +58,7 @@ def compare_at_date(world, obs_date, months_ahead=9, anchor_window_days=5):
     next_meeting = next_meeting_after(world.meeting_dates, obs_date)
 
     baseline = anchor_sofr_rate(world.daily_sofr, obs_date, world.meeting_dates, anchor_window_days)
-    deltas = recover_full_model_path(strip, world.meeting_dates, baseline, obs_date)
+    deltas = recover_full_model_path(strip, world.meeting_dates, baseline, obs_date, world.daily_sofr)
     full_rate_sofr = float(implied_daily_path([next_meeting], baseline, deltas).iloc[0])
 
     simple_rate_sofr = float(simple_curve_path(strip, obs_date, [next_meeting]).iloc[0])
@@ -154,7 +154,7 @@ def implied_paths_for_plot(world, obs_date, horizon_days=240, months_ahead=9, an
     strip = sr1_strip_as_of(world.sr1_contracts, obs_date, months_ahead)
 
     baseline = anchor_sofr_rate(world.daily_sofr, obs_date, world.meeting_dates, anchor_window_days)
-    deltas = recover_full_model_path(strip, world.meeting_dates, baseline, obs_date)
+    deltas = recover_full_model_path(strip, world.meeting_dates, baseline, obs_date, world.daily_sofr)
     full_path = implied_daily_path(dates, baseline, deltas) - world.spread_pct
     simple_path = simple_curve_path(strip, obs_date, dates) - world.spread_pct
     true_path = world.true_policy.reindex(dates)

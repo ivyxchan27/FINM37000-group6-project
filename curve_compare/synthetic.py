@@ -139,7 +139,8 @@ def generate_synthetic_world(
     meeting_dates = generate_meeting_dates(start, n_meetings, meetings_per_year)
     moves = pd.Series(moves_bps, index=pd.DatetimeIndex(meeting_dates), dtype=float)
 
-    span_start = pd.Timestamp(meeting_dates[0]).replace(day=1)
+    first_obs_date = meeting_dates[0] - pd.Timedelta(days=30)
+    span_start = pd.Timestamp(first_obs_date).replace(day=1)
     last_month = pd.Timestamp(meeting_dates[-1]) + pd.DateOffset(months=extra_months_after_last_meeting)
     span_end = last_month + pd.offsets.MonthEnd(0)
     dates = pd.date_range(span_start, span_end, freq="D")

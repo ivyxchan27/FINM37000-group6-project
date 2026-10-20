@@ -19,6 +19,7 @@ PROCESSED_DIR = DATA_DIR / "processed"
 
 #processed data inputs and outputs.
 EFFR_CSV = PROCESSED_DIR / "effr_daily.csv"
+SOFR_CSV = PROCESSED_DIR / "sofr_daily.csv"
 FOMC_CSV = PROCESSED_DIR / "fomc_meetings.csv"
 SOFR_FUTURES_PARQUET = PROCESSED_DIR / "sofr_futures_settlements.parquet"
 FOMC_ALIGNMENT_CSV = PROCESSED_DIR / "fomc_futures_alignment.csv"

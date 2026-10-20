@@ -1,5 +1,5 @@
 """
-Validate and clean realized FOMC policy decisions.
+Validate and clean realized FOMC policy decisions and daily SOFR observations.
 """
 
 import pandas as pd
@@ -9,7 +9,7 @@ def validate_fomc_decisions(df):
     """
     Validate meeting-level realized FOMC policy decisions.
 
-    Parameters:
+    Args:
     - df (pd.DataFrame): Meeting dates, target bounds, and decisions.
 
     Returns (pd.DataFrame): Validated decisions sorted by meeting date.
@@ -65,3 +65,41 @@ def validate_fomc_decisions(df):
             raise ValueError("Missing effective date for a policy rate change.")
 
     return df.sort_values("meeting_date").reset_index(drop = True)
+
+
+def validate_sofr(df):
+    """
+    Validate daily SOFR observations.
+
+    Args:
+    - df (pd.DataFrame): Daily SOFR observations with columns [date, sofr].
+
+    Returns (pd.DataFrame): Validated SOFR observations sorted by date.
+
+    Raises: ValueError: If the data fail a consistency check.
+    """
+    df = df.copy()
+
+    #1. Check for required columns.
+    required_columns = ["date", "sofr"]
+    if not set(required_columns).issubset(df.columns):
+        raise ValueError("Missing required SOFR columns.")
+
+    #2. Normalize dates and rates to the expected data types.
+    df["date"] = pd.to_datetime(df["date"], errors = "coerce")
+    df["sofr"] = pd.to_numeric(df["sofr"], errors = "coerce")
+
+    #3. Check for missing or invalid values.
+    if df[required_columns].isna().any().any():
+        raise ValueError("Missing or invalid values in required SOFR fields.")
+
+    #4. Check for duplicate observation dates.
+    if df["date"].duplicated().any():
+        raise ValueError("Duplicate SOFR observation dates found.")
+
+    #5. Check for invalid SOFR rates.
+    if not (df["sofr"] >= 0).all():
+        raise ValueError("Negative SOFR rates found.")
+
+    #6. Sort observations chronologically.
+    return df.sort_values("date").reset_index(drop = True)

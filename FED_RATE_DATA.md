@@ -2,9 +2,9 @@
 
 ## Overview
 
-This pipeline collects historical Federal Open Market Committee (FOMC) meeting dates, realized federal funds target-rate decisions, and daily Effective Federal Funds Rate (EFFR) observations from January 2022 through September 2026.
+This pipeline collects historical Federal Open Market Committee (FOMC) meeting dates, realized federal funds target-rate decisions, daily Effective Federal Funds Rate (EFFR) observations, and daily Secured Overnight Financing Rate (SOFR) fixings from January 2022 through September 2026.
 
-The resulting datasets provide the realized monetary policy outcomes used to evaluate expectations implied by SOFR futures.
+The resulting datasets provide realized monetary policy outcomes for evaluating expectations implied by SOFR futures. Daily SOFR fixings also allow downstream pricing models to account for the realized portion of each futures contract's reference period.
 
 ## Data Sources
 
@@ -12,22 +12,25 @@ The resulting datasets provide the realized monetary policy outcomes used to eva
 |---|---|---|
 | FOMC meeting calendar | Federal Reserve Board | Historical scheduled FOMC policy announcement dates |
 | Effective Federal Funds Rate (EFFR) | Federal Reserve Bank of New York | Daily observed overnight federal funds rate |
+| Secured Overnight Financing Rate (SOFR) | Federal Reserve Bank of New York | Daily realized overnight secured financing rate fixings |
 | Federal funds target range | FRED (`DFEDTARL`, `DFEDTARU`) | Daily lower and upper bounds of the Fed's target range, sourced from the Federal Reserve Board |
 
 **Official sources:**
 - https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
 - https://www.newyorkfed.org/markets/reference-rates/effr
+- https://www.newyorkfed.org/markets/reference-rates/sofr
 - https://fred.stlouisfed.org/series/DFEDTARL
 - https://fred.stlouisfed.org/series/DFEDTARU
 
 ## Data Processing
 
-1. Retrieve historical EFFR observations from the New York Fed's public API.
+1. Retrieve historical daily EFFR and SOFR observations from the New York Fed's public API.
 2. Construct the historical FOMC announcement calendar for the sample period.
 3. Download daily federal funds target-range bounds from FRED.
 4. Match each FOMC announcement to the target range immediately before the meeting and the first observation afterward.
 5. Calculate changes in the target midpoint in basis points and classify decisions as hikes, cuts, or holds.
 6. Validate the resulting meeting-level dataset for duplicates, missing values, invalid target ranges, and inconsistent policy changes.
+7. Validate daily SOFR observations for required fields, numeric values, duplicate dates, and nonnegative rates; sort the observations chronologically.
 
 The current meeting calendar covers regularly scheduled FOMC meetings. Unscheduled policy actions are not separately represented.
 
@@ -38,12 +41,13 @@ The effective dates inferred from the target-rate series are provisional until v
 From the repository root, run:
 
 ```bash
-python -m scripts.fetch_fomc_data
+python -m scripts.fetch_rate_data
 ```
 
 This generates:
 
 - `data/processed/effr_daily.csv` — daily EFFR observations.
+- `data/processed/sofr_daily.csv` — daily realized SOFR fixings (columns `date`, `sofr`, with rates in percentage points).
 - `data/processed/fomc_meetings.csv` — FOMC meetings and realized target-rate decisions.
 
 Generated datasets are excluded from Git through `.gitignore` and can be recreated by running the pipeline.
@@ -71,10 +75,10 @@ Multiple FOMC meetings may be associated with a single futures contract observat
 
 ### Running the Alignment
 
-First, generate the FOMC datasets:
+First, generate the FOMC and daily rate datasets:
 
 ```bash
-python -m scripts.fetch_fomc_data
+python -m scripts.fetch_rate_data
 ```
 
 Once the SOFR futures data pipeline has generated its cleaned settlement file, run:
@@ -96,16 +100,18 @@ The alignment dataset provides a meeting-to-contract mapping for subsequent pric
 Run the automated tests:
 
 ```bash
-python -m pytest tests/test_fomc_data.py -v
+python -m pytest tests/test_rate_data.py -v
 ```
 
-The seven automated tests check meeting-calendar ordering and uniqueness, acceptance of a valid policy decision, rejection of an incorrectly calculated basis-point change, and synthetic SOFR futures alignment. Alignment tests include multiple meetings within one contract, a month-end announcement whose effective date falls in the next contract period, and the fallback for a hold without a recorded effective date.
+The ten automated tests check meeting-calendar ordering and uniqueness, acceptance of a valid policy decision, rejection of an incorrectly calculated basis-point change, and synthetic SOFR futures alignment. Alignment tests include multiple meetings within one contract, a month-end announcement whose effective date falls in the next contract period, and the fallback for a hold without a recorded effective date. Three additional tests cover valid SOFR observations, missing SOFR rates, and duplicate SOFR dates.
 
-These tests establish internal consistency but do not independently verify the historical policy decisions against FOMC statements.
+These tests establish internal consistency but do not independently verify the historical policy decisions against FOMC statements. The data collection script has also successfully generated 1,190 EFFR observations, 1,184 SOFR observations, and 38 FOMC meeting records for the sample.
+
+SOFR fixings are published after their effective dates, generally on the next business day. Downstream pricing must respect when fixings became available to avoid look-ahead bias, and must handle weekends and holidays appropriately when calculating realized accruals.
 
 ## Integration with SOFR Futures
 
-These datasets complement the SOFR futures settlement data collected separately through Databento.
+These datasets complement the SOFR futures settlement data collected separately through Databento. The `sofr_daily.csv` fixings are distinct from SOFR futures settlement prices: they provide realized overnight rates needed to account for elapsed portions of SR1 and SR3 reference periods.
 
 The FOMC announcement dates define the policy events and the pre-announcement cutoff; policy effective dates determine contract reference-period overlap. Realized target rates provide the outcomes against which market-implied expectations can be evaluated.
 

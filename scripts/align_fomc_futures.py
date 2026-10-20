@@ -16,7 +16,7 @@ def main():
     ensure_dirs()
 
     if not FOMC_CSV.exists():
-        raise FileNotFoundError("FOMC dataset not found. Run python -m scripts.fetch_fomc_data first.")
+        raise FileNotFoundError("FOMC dataset not found. Run python -m scripts.fetch_rate_data first.")
 
     if not SOFR_FUTURES_PARQUET.exists():
         raise FileNotFoundError("SOFR futures dataset not found. Run the SOFR futures data pipeline first.")

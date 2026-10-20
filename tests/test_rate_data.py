@@ -1,11 +1,11 @@
 """
-Tests for FOMC data collection and validation.
+Tests for FOMC data collection, alignment, and daily SOFR validation.
 """
 
 import pandas as pd
 import pytest
 from fomc_data.fomc_calendar import fetch_fomc_calendar
-from fomc_data.clean import validate_fomc_decisions
+from fomc_data.clean import validate_fomc_decisions, validate_sofr
 from fomc_data.alignment import align_fomc_with_futures
 
 
@@ -186,3 +186,40 @@ def test_align_hold_falls_back_to_next_business_day():
 
     assert len(aligned) == 1
     assert aligned.iloc[0]["effective_date"] == pd.Timestamp("2024-04-01")
+
+
+def test_valid_sofr():
+    """
+    Valid daily SOFR observations should pass validation and be sorted by date.
+    """
+    df = pd.DataFrame([{"date": "2024-01-03", "sofr": 5.33},
+                       {"date": "2024-01-02", "sofr": 5.31}])
+
+    result = validate_sofr(df)
+
+    assert len(result) == 2
+    assert result["date"].is_monotonic_increasing
+    assert result["date"].is_unique
+    assert result["sofr"].tolist() == [5.31, 5.33]
+
+
+def test_invalid_sofr_missing_rate():
+    """
+    A missing daily SOFR fixing should raise an error.
+    """
+    df = pd.DataFrame([{"date": "2024-01-02", "sofr": 5.31},
+                       {"date": "2024-01-03", "sofr": None}])
+
+    with pytest.raises(ValueError, match = "Missing or invalid"):
+        validate_sofr(df)
+
+
+def test_invalid_sofr_duplicate_date():
+    """
+    Duplicate daily SOFR observation dates should raise an error.
+    """
+    df = pd.DataFrame([{"date": "2024-01-02", "sofr": 5.31},
+                       {"date": "2024-01-02", "sofr": 5.33}])
+
+    with pytest.raises(ValueError, match = "Duplicate SOFR"):
+        validate_sofr(df)

@@ -44,7 +44,7 @@ the elapsed part of the current contract month.
   from the SR1 strip, linearly interpolated between contract maturities, and reports the
   implied daily rate as that curve's local forward rate. It is reimplemented locally
   rather than imported, since the course package depends on `databento` at import time
-  and this project makes no network calls at runtime.
+  and this comparison makes no network calls at runtime.
 
 Both operate in SOFR-rate space (since SR1 settles on SOFR, not the policy rate
 directly); the known constant SOFR-policy spread (`world.spread_pct`, a synthetic-data

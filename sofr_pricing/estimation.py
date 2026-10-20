@@ -73,12 +73,19 @@ def policy_level_on(day, decisions, after_announcement=True):
     `decisions` is the meeting table from #2 (`fomc_meetings.csv`), with the
     target bounds before and after each meeting.
 
-    after_announcement=True  (used as the anchor of the fit):
+    after_announcement=True:
         a meeting announced ON `day` already counts, so on a decision day this
-        is the post-announcement level. This matches PR #15's definition.
-    after_announcement=False (used for comparing with SOFR on `day`):
+        is the post-announcement level. The cumulative changes that #5 scores
+        start from this level.
+    after_announcement=False:
         only meetings announced BEFORE `day` count, because a decision takes
-        effect the business day after it is announced.
+        effect the business day after it is announced. This is the level in
+        force on `day`, and the one to compare with SOFR on `day`.
+
+    `fit_many` anchors the fit with after_announcement=False and adds a
+    decision announced on the observation date as a KNOWN move from its
+    effective date. Do not combine a post-announcement anchor with that known
+    move: the decision would be counted twice.
     """
     _check_columns(decisions, DECISION_COLUMNS, "decisions")
     day = pd.Timestamp(day)
@@ -289,6 +296,9 @@ def fit_meeting_moves(obs_date, contracts, meeting_dates, anchor, basis=0.0,
         "rmse_bps": float(np.sqrt(np.mean(residual_bps ** 2))),
         "max_abs_residual_bps": float(np.max(np.abs(residual_bps))),
         "jacobian_rank": rank,
+        # False means some moves are NOT pinned down by the prices: a price
+        # residual near 0 then does not mean the moves were recovered.
+        "fully_identified": bool(n_meetings > 0 and rank == n_meetings),
         "condition_number": condition_number,
         "iterations": iterations,
         "converged": bool(converged),

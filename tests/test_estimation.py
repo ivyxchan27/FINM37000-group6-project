@@ -67,6 +67,7 @@ def test_noiseless_fit_recovers_the_moves():
     assert result.diagnostics["converged"]
     assert result.diagnostics["rmse_bps"] < 1e-3
     assert result.diagnostics["jacobian_rank"] == result.diagnostics["n_meetings"]
+    assert result.diagnostics["fully_identified"]
 
 
 def test_sensitivities_match_hand_calculations():
@@ -117,7 +118,14 @@ def test_too_few_contracts_is_flagged_by_the_rank():
 
     assert result.diagnostics["n_meetings"] == 3
     assert result.diagnostics["jacobian_rank"] == 1
+    assert not result.diagnostics["fully_identified"]
     assert result.diagnostics["rmse_bps"] < 1e-3   # it still matches the one price
+
+    # ...but matching the price is NOT recovering the moves: the truth is -10 bp
+    # at Jul 10 only, and the fit spreads it over all three meetings.
+    truth = np.array([0.0, -10.0, 0.0])
+    errors = result.meetings["implied_move_bps"].to_numpy() - truth
+    assert np.abs(errors).max() > 1.0
 
 
 # ---------------------------------------------------------------------------

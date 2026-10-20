@@ -1,18 +1,17 @@
-"""Local stand-in for `sofr_pricing.sr1_rate` (Issue #3, PR #12).
+"""Local SR1 averaging helper for the synthetic calendar-day SOFR series.
 
-PR #12 is not merged yet, so this package does not import `sofr_pricing`.
 `sr1_average_rate` below is a small, deliberately minimal reimplementation of
-the same SR1 convention used there: the day-weighted average of daily SOFR
-over a calendar month, with every calendar day counted once.
+the same SR1 convention used by `sofr_pricing.sr1_rate`: the day-weighted
+average of daily SOFR over a calendar month, with every calendar day counted once.
 
 It is simpler than `sofr_pricing.sr1_rate` because the synthetic daily SOFR
 series built in `synthetic.py` already has exactly one value per CALENDAR
 day (it skips the business-day fixing calendar entirely, see `synthetic.py`),
 so there is no weekend/holiday carry-forward to handle here.
 
-Swap this for `sofr_pricing.sr1_rate` once #12 merges and the data pipeline
-produces a real fixing path; the signature (daily rate Series, start date,
-end date) is deliberately the same.
+Use `sofr_pricing.sr1_rate` when the data pipeline supplies a business-day
+fixing path; the signature (daily rate Series, start date, end date) is
+deliberately the same.
 """
 
 import pandas as pd

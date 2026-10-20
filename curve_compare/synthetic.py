@@ -1,17 +1,15 @@
-"""Synthetic SOFR / FOMC data (Issue #6), standing in for real data pending #1/#4.
+"""Synthetic SOFR / FOMC data for the issue #6 comparison.
 
 PLACEHOLDER. Everything in this module is a seeded, fully-known fake world:
 a true policy-rate path that only moves on FOMC meeting dates, a daily SOFR
 series built from it, and a strip of SR1 futures settlement prices built
-from that SOFR series. It replaces the real Databento SR1 settlements and
-the real FOMC calendar (#1/#2/#4) until those are available, at which point
-`generate_synthetic_world` is replaced by real data loaders; `full_model.py`
-and `simple_curve.py` only consume the `SyntheticWorld` fields below (daily
-SOFR, SR1 contracts, meeting dates), so neither needs to change.
+from that SOFR series. The comparison uses it instead of the repository's
+real-data modules. `full_model.py` and `simple_curve.py` consume the
+`SyntheticWorld` fields below (daily SOFR, SR1 contracts, meeting dates).
 
-Rates are in PERCENT everywhere (4.25 means 4.25%), matching `sofr_pricing`
-(PR #12). Meeting moves are in basis points (25 = a 25 bp hike), matching
-`forecast_eval` (PR #15) and `fomc_data` (PR #13).
+Rates are in PERCENT everywhere (4.25 means 4.25%), matching `sofr_pricing`.
+Meeting moves are in basis points (25 = a 25 bp hike), matching
+`forecast_eval` and `fomc_data`.
 
 Because the true path is known exactly, the "market" SR1 prices below are
 built with perfect foresight of the whole contract month (realized daily

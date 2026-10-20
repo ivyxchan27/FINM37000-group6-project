@@ -4,11 +4,11 @@ The `curve_compare` package asks: does explicitly modeling FOMC meeting timing a
 SR1 settlement conventions give a more accurate market-implied Fed rate path than a
 generic smooth curve that ignores FOMC timing?
 
-**Status:** the comparison runs on **synthetic data**. #1 (real SR1 settlements) and #4
-(the project's own fitted implied paths) are not available yet, so this package generates
-its own known, seeded policy path and SR1 prices and recovers the path from them. Neither
-`sofr_pricing` (#3, PR #12), `fomc_data` (#2, PR #13), nor `forecast_eval` (#5, PR #15) is
-imported, since none has merged; see "Pending" below for how this plugs in once they do.
+**Status:** the comparison runs on **synthetic data**. It generates a known, seeded
+policy path and SR1 prices, then recovers the path from those prices. The repository
+contains data collection, pricing, FOMC calendar, and forecast evaluation modules, but
+this comparison does not import them. Real settlements and fitted implied paths are
+not inputs to this demo; see "Pending" for possible integration work.
 
 ## Scope
 
@@ -25,8 +25,8 @@ SR3 and multi-horizon comparisons are natural follow-ups once this scope is vali
 
 ## The two methods
 
-Both methods take one date's strip of SR1 settlement prices and return an implied daily
-SOFR rate path from that date forward.
+Both methods use one date's strip of SR1 settlement prices to estimate a daily
+SOFR rate path. The full model also uses meeting dates and recent SOFR fixings.
 
 - **Full model** (`full_model.py`): a step path that can only change on a scheduled FOMC
   meeting date. The size of each step is recovered one contract month at a time (a
@@ -79,7 +79,7 @@ Matching `forecast_eval` (#5, PR #15) and `docs/METHODOLOGY.md` Section 9 (PR #1
 2. Daily SOFR = true policy rate + a small constant spread + seeded daily noise.
 3. SR1 settlement prices: 100 − the day-weighted average daily SOFR for each calendar
    month, with optional seeded price noise, using a small local averaging helper
-   (`sr1_local.py`) that stands in for `sofr_pricing.sr1_rate` until #12 merges.
+   (`sr1_local.py`) for the synthetic series, which has one value per calendar day.
 
 Because the whole path is known in advance, SR1 prices are built with perfect foresight
 of each contract month (the standard way to validate a curve-fitting method: generate
@@ -100,19 +100,15 @@ course method does.
 
 ## Pending
 
-- **#1 / #4**: once real SR1 settlements and the project's own fitted implied paths exist,
-  `generate_synthetic_world`'s output (daily SOFR, the SR1 contract strip) is replaced by
-  real data in the same shape; `full_model.py` and `simple_curve.py` do not change.
-- **#12 (`sofr_pricing`)**: swap `sr1_local.sr1_average_rate` for `sofr_pricing.sr1_rate`
-  once merged (see `sr1_local.py`'s docstring).
-- **#2 (`fomc_data`) / #13**: the synthetic meeting schedule can be replaced by
-  `fomc_data.fomc_calendar.fetch_fomc_calendar`'s real dates once merged.
-- **#5 (`forecast_eval`) / #15**: this comparison reimplements a next-meeting-only,
-  SR1-only slice of the same horizon logic `forecast_eval` already implements generally.
-  A follow-up could have `full_model.py`/`simple_curve.py` feed `forecast_eval` directly
-  for horizons 1-6, instead of `compare.py`'s own single-horizon logic.
-- **SR3 and multi-horizon comparisons**: out of scope here (see "Scope" above); natural
-  follow-ups once this SR1 / next-meeting comparison is validated.
+- **Real-data integration**: connect collected SR1 settlements, daily SOFR, and fitted
+  implied paths to the comparison. The demo currently supplies synthetic data in their
+  place.
+- **`sofr_pricing`**: use `sofr_pricing.sr1_rate` when feeding a business-day fixing
+  path instead of the synthetic calendar-day series (see `sr1_local.py`'s docstring).
+- **`fomc_data`**: replace the synthetic meeting schedule with dates from
+  `fomc_data.fomc_calendar.fetch_fomc_calendar` for a real-data comparison.
+- **`forecast_eval`**: this comparison implements only next-meeting, SR1-only horizon
+  logic. A follow-up could feed both implied paths to `forecast_eval` for horizons 1-6.
 
 ## Usage
 

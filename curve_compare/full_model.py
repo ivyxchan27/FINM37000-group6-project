@@ -59,6 +59,11 @@ def recover_full_model_path(sr1_contracts, meeting_dates, baseline_rate, obs_dat
     dict mapping each resolved meeting date (a `pd.Timestamp` strictly after
     `obs_date`, falling within the contracts' date range) to its recovered
     delta, in the same units as `baseline_rate` (percent).
+
+    Raises
+    ------
+    ValueError : if a contract month contains multiple unresolved meetings;
+        one monthly average cannot identify their separate moves.
     """
     obs_date = pd.Timestamp(obs_date)
     meeting_dates = sorted(pd.Timestamp(m) for m in meeting_dates)

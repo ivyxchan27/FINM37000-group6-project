@@ -1,0 +1,70 @@
+"""Demo of the Issue #6 comparison on SYNTHETIC data (no real SR1 prices yet).
+
+Run from the repository root:
+    python -m scripts.run_curve_compare_demo
+    python -m scripts.run_curve_compare_demo --plot sample_paths.png
+
+Builds one seeded synthetic world (a known hike-then-hold-then-cut policy
+path, SR1 prices built from it), fits both the full FOMC-aware model and the
+simplified course-style curve at every observation date, and prints the
+next-meeting-horizon accuracy tables described in CURVE_COMPARE.md.
+"""
+
+import argparse
+
+import pandas as pd
+
+from curve_compare import (
+    default_obs_dates,
+    generate_synthetic_world,
+    method_difference_bps,
+    plot_error_by_days_to_meeting,
+    plot_sample_paths,
+    run_comparison,
+    summarize_by_days_to_meeting,
+    summarize_by_regime,
+    summarize_errors,
+)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--plot", metavar="PATH", help="also save the sample-paths chart here")
+    args = parser.parse_args()
+
+    world = generate_synthetic_world(seed=0)
+    obs_dates = default_obs_dates(world)
+    results = run_comparison(world, obs_dates)
+
+    pd.set_option("display.width", 120)
+    pd.set_option("display.float_format", "{:.2f}".format)
+    print("SYNTHETIC DATA - placeholder until #1/#4 produce real SR1 settlements\n")
+    print(f"Meeting dates: {[d.date().isoformat() for d in world.meeting_dates]}")
+    print(f"Moves (bp): {world.moves_bps.tolist()}\n")
+
+    print("Next-meeting-horizon accuracy, full model vs. simplified curve:")
+    print(summarize_errors(results), "\n")
+
+    print("Accuracy by whether the next meeting was a rate change or a hold:")
+    print(summarize_by_regime(results), "\n")
+
+    print("Accuracy by calendar days before the next meeting (weekly buckets):")
+    print(summarize_by_days_to_meeting(results), "\n")
+
+    diff = method_difference_bps(results)
+    print(f"Mean (simplified - full model) error: {diff.mean():.2f} bp")
+    print(f"Mean |simplified - full model| error: {diff.abs().mean():.2f} bp")
+
+    if args.plot:
+        import matplotlib
+        matplotlib.use("Agg")  # write to a file without opening a window
+
+        sample_date = world.meeting_dates[2] + pd.Timedelta(days=3)
+        plot_sample_paths(world, sample_date).savefig(args.plot, dpi=150)
+        days_path = args.plot.rsplit(".", 1)[0] + "_by_days.png"
+        plot_error_by_days_to_meeting(results).savefig(days_path, dpi=150)
+        print(f"\nSaved charts to {args.plot} and {days_path}")
+
+
+if __name__ == "__main__":
+    main()

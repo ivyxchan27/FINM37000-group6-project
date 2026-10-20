@@ -148,7 +148,7 @@ The project will be developed in the following stages, with detailed tasks and p
 3. Build the SOFR futures pricing framework. ([#3](https://github.com/mmiah00/FINM37000-group6-project/issues/3))
 4. Estimate market-implied Fed rate paths. ([#4](https://github.com/mmiah00/FINM37000-group6-project/issues/4))
 5. Evaluate Fed-path forecast accuracy. ([#5](https://github.com/mmiah00/FINM37000-group6-project/issues/5)) See [FORECAST_EVAL.md](FORECAST_EVAL.md).
-6. Compare the full model with a simplified curve methodology. ([#6](https://github.com/mmiah00/FINM37000-group6-project/issues/6))
+6. Compare the full model with a simplified curve methodology. ([#6](https://github.com/mmiah00/FINM37000-group6-project/issues/6)) See [CURVE_COMPARE.md](CURVE_COMPARE.md).
 7. Create final visualizations and analysis. ([#7](https://github.com/mmiah00/FINM37000-group6-project/issues/7))
 8. If time permits, analyze intraday FOMC announcement reactions. ([#8](https://github.com/mmiah00/FINM37000-group6-project/issues/8))
 
@@ -165,8 +165,7 @@ The project will be developed in the following stages, with detailed tasks and p
 
 ## How to Run
 
-*Stage 1 (SOFR futures data collection) is implemented; see [Getting the SOFR futures data](#getting-the-sofr-futures-data) and [DATA.md](DATA.md). The remaining stages are planned, and these steps describe how the project is intended to run once each is implemented.*
-*Status: so far only the issue #5 evaluation code exists (see [FORECAST_EVAL.md](FORECAST_EVAL.md)); the other stages are not implemented yet. These steps describe how the full project is intended to run.*
+*Status: SOFR futures data collection (see [Getting the SOFR futures data](#getting-the-sofr-futures-data) and [DATA.md](DATA.md)), FOMC meeting data, SR1/SR3 pricing, and the issue #5 forecast evaluation (see [FORECAST_EVAL.md](FORECAST_EVAL.md)) are implemented. The issue #6 comparison against a simplified SOFR curve (see [CURVE_COMPARE.md](CURVE_COMPARE.md)) also runs, on synthetic data, without the course package or a Databento key. Path estimation and final visualizations are still planned. These steps describe how the full project is intended to run once every stage is implemented.*
 
 1. Use Python 3.12 or newer.
 2. Install the project dependencies, including the course package [`finm37000`](https://github.com/pattersonem/finm37000-autumn-2026).

@@ -131,7 +131,7 @@ $$
 R^{market}_i = 100 - P^{market}_i,
 $$
 
-and place it at a node $\tau_i$ (for example the midpoint of the contract's reference period). A daily curve $\tilde r(d)$ is then obtained by interpolating $\{(\tau_i, R^{market}_i)\}$. The benchmark should also be replaced by the course's simplified curve method when that is implemented, so the comparison reflects the course material and not only this ad hoc version.
+and place it at a node $\tau_i$ (for example the midpoint of the contract's reference period). A daily curve $\tilde r(d)$ is then obtained by interpolating $\{(\tau_i, R^{market}_i)\}$. The SR1-only comparison in [CURVE_COMPARE.md](../CURVE_COMPARE.md) implements a course-style simplified curve for its synthetic benchmark.
 
 ## 8. Fit Comparison (Interpretation Requires Care)
 

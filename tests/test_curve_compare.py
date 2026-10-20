@@ -3,7 +3,16 @@
 import pandas as pd
 import pytest
 
-from curve_compare.compare import compare_at_date, default_obs_dates, implied_paths_for_plot, run_comparison, sr1_strip_as_of, summarize_by_regime
+from curve_compare.compare import (
+    compare_at_date,
+    default_obs_dates,
+    implied_paths_for_plot,
+    run_comparison,
+    sr1_strip_as_of,
+    summarize_by_regime,
+    summarize_errors,
+    summarize_errors_excluding_before_first_meeting,
+)
 from curve_compare.full_model import recover_full_model_path
 from curve_compare.synthetic import generate_synthetic_world, generate_sr1_contracts
 
@@ -107,3 +116,31 @@ def test_next_meeting_after_raises_past_the_last_meeting():
     world = generate_synthetic_world(seed=0)
     with pytest.raises(ValueError):
         next_meeting_after(world.meeting_dates, world.meeting_dates[-1])
+
+
+def test_default_obs_dates_skips_new_years_day():
+    """The default window starts 30 days before the 2024-01-31 meeting, which
+    falls on New Year's Day; it should start on the next real business day
+    instead (2024-01-02 is a Tuesday, so it is the first one)."""
+    world = generate_synthetic_world(seed=0)
+    first_obs_date = default_obs_dates(world)[0]
+    assert first_obs_date != pd.Timestamp("2024-01-01")
+    assert first_obs_date == pd.Timestamp("2024-01-02")
+
+
+def test_summarize_errors_excluding_before_first_meeting_drops_only_that_stretch():
+    world = generate_synthetic_world(seed=0)
+    obs_dates = default_obs_dates(world)
+    results = run_comparison(world, obs_dates)
+
+    overall = results
+    excluded = results[results["obs_date"] < pd.Timestamp(world.meeting_dates[0])]
+    assert len(excluded) > 0
+    assert len(excluded) < len(overall)
+
+    summary = summarize_errors_excluding_before_first_meeting(results, world)
+    overall_summary = summarize_errors(results)
+    assert summary.loc["full_model", "n_obs"] == len(overall) - len(excluded)
+    # With the harder, unanchored pre-meeting stretch removed, the full
+    # model's error should not get worse.
+    assert summary.loc["full_model", "mae_bps"] <= overall_summary.loc["full_model", "mae_bps"]

@@ -29,7 +29,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from curve_compare.sr1_local import sr1_average_rate
+from sofr_pricing.pricing import sr1_rate
 
 # A realistic hike-then-hold-then-cut cycle: 5 hikes, 6 holds, 5 cuts, in bp.
 DEFAULT_MOVES_BPS = [25, 25, 50, 50, 25, 0, 0, 0, 0, 0, 0, -25, -25, -50, -25, -25]
@@ -88,7 +88,7 @@ def generate_sr1_contracts(daily_sofr, months, price_noise_bps=0.0, seed=1):
     for month_start in months:
         month_start = pd.Timestamp(month_start).replace(day=1)
         month_end = month_start + pd.offsets.MonthEnd(0)
-        rate = sr1_average_rate(daily_sofr, month_start, month_end)
+        rate = sr1_rate(daily_sofr, month_start, month_end)
         price = 100.0 - rate
         if price_noise_bps:
             price += rng.normal(0.0, price_noise_bps / 100.0)

@@ -17,11 +17,17 @@ synthetic-data parameter, so it is simply known.
 
 import numpy as np
 import pandas as pd
+from pandas.tseries.holiday import USFederalHolidayCalendar
+from pandas.tseries.offsets import CustomBusinessDay
 
 from curve_compare.full_model import anchor_sofr_rate, implied_daily_path, recover_full_model_path
 from curve_compare.simple_curve import simple_curve_path
 
 METHODS = ("full_model", "simple_curve")
+
+# Skips US federal holidays (not just weekends) so a window starting near
+# January 1st does not land on New Year's Day itself.
+_FEDERAL_BUSINESS_DAY = CustomBusinessDay(calendar=USFederalHolidayCalendar())
 
 
 def sr1_strip_as_of(sr1_contracts, obs_date, months_ahead=9):
@@ -45,10 +51,13 @@ def default_obs_dates(world):
 
     Stops before the last meeting so that `next_meeting_after` can always
     find a real meeting (with a known realized outcome) to score against.
+    Uses a US-federal-holiday business-day calendar, not just weekdays, so a
+    window starting near January 1st begins on the first real business day
+    of the year rather than on New Year's Day itself.
     """
     start = world.meeting_dates[0] - pd.Timedelta(days=30)
     end = world.meeting_dates[-1] - pd.Timedelta(days=1)
-    return pd.bdate_range(start, end)
+    return pd.date_range(start, end, freq=_FEDERAL_BUSINESS_DAY)
 
 
 def compare_at_date(world, obs_date, months_ahead=9, anchor_window_days=5):
@@ -97,6 +106,22 @@ def summarize_errors(results):
     """One row per method: n_obs, bias, MAE, RMSE (bp), at the next-meeting horizon."""
     rows = {method: _method_stats(results[f"{method}_error_bps"]) for method in METHODS}
     return pd.DataFrame(rows).T
+
+
+def summarize_errors_excluding_before_first_meeting(results, world):
+    """`summarize_errors`, dropping observation dates before the first scheduled meeting.
+
+    `anchor_sofr_rate` anchors the bootstrap to SOFR fixings since the LATEST
+    PAST meeting; before the first meeting there is no past meeting, so the
+    anchor is just a short trailing average with nothing pinning it to the
+    true policy level. That makes this stretch a harder, qualitatively
+    different case than the rest of the sample (every real meeting has a
+    predecessor), so the headline numbers are also reported with it excluded;
+    see CURVE_COMPARE.md "Accuracy before the first meeting".
+    """
+    first_meeting = pd.Timestamp(world.meeting_dates[0])
+    after_first_meeting = results[results["obs_date"] >= first_meeting]
+    return summarize_errors(after_first_meeting)
 
 
 def method_difference_bps(results):

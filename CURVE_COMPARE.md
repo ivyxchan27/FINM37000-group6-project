@@ -80,14 +80,53 @@ Matching `forecast_eval` (#5, PR #15) and `docs/METHODOLOGY.md` Section 9 (PR #1
    bp over 5 meetings).
 2. Daily SOFR = true policy rate + a small constant spread + seeded daily noise.
 3. SR1 settlement prices: 100 − the day-weighted average daily SOFR for each calendar
-   month, with optional seeded price noise, using a small local averaging helper
-   (`sr1_local.py`) for the synthetic series, which has one value per calendar day.
+   month, with optional seeded price noise, using `sofr_pricing.sr1_rate` (#3, PR #12)
+   on the synthetic daily SOFR series, which already has one value per calendar day.
 
 Because the whole path is known in advance, SR1 prices are built with perfect foresight
 of each contract month (the standard way to validate a curve-fitting method: generate
 prices from a known path, then check that the method recovers it — see Section 12 of
 `docs/METHODOLOGY.md`). `tests/test_curve_compare.py` checks that the full model recovers
 the exact true deltas when there is no noise.
+
+## Accuracy before the first meeting
+
+`anchor_sofr_rate` anchors the full model's bootstrap to SOFR fixings since the LATEST
+PAST meeting. Before the first scheduled meeting there is no past meeting, so the anchor
+is just a short trailing average of daily SOFR with nothing pinning it to the true policy
+level — a harder, qualitatively different case than the rest of the sample, where every
+observation date has a real predecessor meeting. `default_obs_dates` starts its window 30
+days before the first meeting (matching the real sample, where observations start a few
+weeks before an FOMC decision), so this stretch makes up part of every demo run; the real
+data starts a similar distance before its first meeting (2022-01-26).
+
+`run_curve_compare_demo` reports the next-meeting accuracy table twice: once overall, and
+once with observation dates before the first meeting excluded
+(`summarize_errors_excluding_before_first_meeting`), so the headline numbers are not
+dominated by that pre-meeting stretch. On the default seeded world (`anchor_window_days=5`):
+
+| | n_obs | full_model MAE (bp) | full_model RMSE (bp) |
+| --- | --- | --- | --- |
+| Overall | 494 | 1.17 | 3.43 |
+| Excluding before 1st meeting | 474 | 0.63 | 0.96 |
+
+The simplified curve's error is essentially unchanged either way (its bootstrap does not
+use an anchor), so only the full model's row moves.
+
+Widening `anchor_window_days` (the trailing-average length) also helps, as a one-parameter
+change, by averaging out more of the daily SOFR noise before the first meeting arrives.
+Trying `anchor_window_days=20` instead of the default 5 on the same seeded world:
+
+| anchor_window_days | Overall MAE / RMSE (bp) | Excluding before 1st meeting MAE / RMSE (bp) |
+| --- | --- | --- |
+| 5 (default) | 1.17 / 3.43 | 0.63 / 0.96 |
+| 20 | 0.86 / 2.66 | 0.48 / 0.69 |
+
+This is a real improvement with no identified downside (the window is already restricted
+to fixings after the latest past meeting, so widening it cannot reach across a meeting
+boundary), but it is reported here rather than adopted as the new default: validating a
+wider window belongs with the real SR1 settlements the anchor will actually be computed
+from (#1/#4), not with this synthetic-data demo's noise level.
 
 ## Known limitation of the simplified curve
 
@@ -105,8 +144,6 @@ course method does.
 - **Real-data integration**: connect collected SR1 settlements, daily SOFR, and fitted
   implied paths to the comparison. The demo currently supplies synthetic data in their
   place.
-- **`sofr_pricing`**: use `sofr_pricing.sr1_rate` when feeding a business-day fixing
-  path instead of the synthetic calendar-day series (see `sr1_local.py`'s docstring).
 - **`fomc_data`**: replace the synthetic meeting schedule with dates from
   `fomc_data.fomc_calendar.fetch_fomc_calendar` for a real-data comparison.
 - **`forecast_eval`**: this comparison implements only next-meeting, SR1-only horizon

@@ -4,9 +4,13 @@ Prepare historical forecast evaluation inputs for Issue #7.
 """
 
 import argparse
+import sys
 from pathlib import Path
 
 import pandas as pd
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
 
 from forecast_eval.metrics import (build_forecast_errors, summarize_by_horizon, hit_rate_sensitivity, summarize_by_regime)
 

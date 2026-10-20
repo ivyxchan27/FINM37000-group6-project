@@ -13,7 +13,7 @@ import pandas as pd
 from final_visualizations.style import COLORS
 
 
-def identify_notable_meetings(errors, horizon = 1, min_observations = 3):
+def identify_notable_meetings(errors, horizon = 1, min_observations = 1):
     """
     Identify notable meetings using average forecast errors.
 
@@ -118,7 +118,7 @@ def plot_notable_meetings(notable):
                     va = "center",
                     fontsize = 9)
 
-    ax.text(0.5, -0.15, "Synthetic illustration; selected categories may refer to the same meeting.", 
+    ax.text(0.5, -0.15, "Historical forecasts; categories may refer to the same meeting. " "Some meetings have only one forecast.", 
             transform = ax.transAxes, ha = "center", fontsize = 9, color = COLORS["gray"])
 
     fig.tight_layout()

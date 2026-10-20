@@ -41,9 +41,16 @@ contracts frequently do not trade at all — the close would be stale or absent
 exactly where the curve needs a price. The exchange's official settlement is
 published as a separate statistics record.
 
-Only *final, actual* settlements are kept, identified by bits 0 and 1 of CME
-MDP3 tag 715 (`SettlPriceType`). Preliminary and intraday settlements are
-discarded. See `SETTLEMENT_FINAL_ACTUAL_MASK` in `sofr_data/clean.py`.
+Settlements are filtered on CME MDP3 tag 715 (`SettlPriceType`): the *actual*
+bit (bit 1) is required, and the *final* bit (bit 0) is preferred. CME often
+publishes an actual-but-not-final settlement (`stat_flags == 2`) and never
+follows it with a final one, which is the normal case for illiquid back-month
+contracts. Requiring both bits discarded about 480 real prices in this sample,
+so a final price is used when one exists and an actual price otherwise. Prices
+with neither bit set (preliminary and intraday) are discarded. The
+`settlement_is_final` column records which was used; filter on it to get the
+strict behaviour. See `SETTLEMENT_ACTUAL_MASK` and `SETTLEMENT_FINAL_MASK` in
+`sofr_data/clean.py`.
 
 Requests are chunked by quarter and cached as parquet under `data/raw/`.
 Databento bills per request, so re-running after a crash, or rebuilding the
@@ -74,7 +81,8 @@ CSV copies of both tables sit alongside the parquet files for eyeballing.
 | `reference_start` | datetime64 | First day of the SOFR window it settles against |
 | `reference_end` | datetime64 | Last day of that window, inclusive |
 | `expiration` | datetime64 | Exchange last trading day |
-| `settlement_price` | float64 | Official final settlement |
+| `settlement_price` | float64 | Official settlement (final if published, otherwise actual) |
+| `settlement_is_final` | bool | `True` if `settlement_price` is a final settlement, `False` if actual-only |
 | `implied_rate` | float64 | `100 - settlement_price`, in percent |
 | `cleared_volume` | Int64 | Cleared volume for the session |
 | `open_interest` | Int64 | Open interest for the session |

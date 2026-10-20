@@ -37,6 +37,33 @@ The core data source is Databento's CME Globex dataset (`GLBX.MDP3`): daily sett
 
 The SOFR futures data will be used to estimate the market-implied policy path, while the FOMC and realized rate data will provide the benchmark against which those expectations are evaluated.
 
+### Getting the SOFR futures data
+
+The SOFR futures settlement prices are pulled from Databento (`GLBX.MDP3`) by
+`scripts/fetch_sofr_futures.py`:
+
+```bash
+pip install -r requirements.txt
+printf '%s' 'db-YOUR_KEY_HERE' > ~/.databento_api_key && chmod 600 ~/.databento_api_key
+
+python scripts/fetch_sofr_futures.py --dry-run   # estimated cost, no charge
+python scripts/fetch_sofr_futures.py             # the real pull
+```
+
+This writes a tidy settlement panel to `data/processed/` and a data quality
+report to `reports/`. The pricing model reads it through one function:
+
+```python
+from sofr_data import load_settlements, settlement_curve
+
+panel = load_settlements()
+curve = settlement_curve(panel, "2024-05-30")   # one day's chain, ready to fit
+```
+
+**See [DATA.md](DATA.md)** for the output schema, the SR1 and SR3 settlement
+conventions, the quality checks, and why settlements come from the `statistics`
+schema rather than daily OHLCV.
+
 ## Methodology
 
 A key challenge is that SOFR futures contracts do not directly report the expected federal funds rate at individual FOMC meetings.
@@ -44,11 +71,13 @@ A key challenge is that SOFR futures contracts do not directly report the expect
 The contracts have different settlement conventions:
 
 - **One-month SOFR futures** settle based on the average SOFR rate during a calendar month.
-- **Three-month SOFR futures** settle based on compounded SOFR over a three-month period.
+- **Three-month SOFR futures** settle based on compounded SOFR over a reference period running from one IMM date to the next (not a calendar quarter).
 
 We will build a curve-fitting procedure that converts these futures prices into an implied path for short-term interest rates. The model will estimate the sequence of Federal Reserve rate changes that best reproduces the observed futures prices while respecting the settlement conventions of each contract.
 
 This allows us to recover the market-implied expected Fed policy path on each trading day in the sample.
+
+The current policy rate is taken from observed data, the SOFR-policy-rate basis is held fixed, and the meeting moves are estimated by regularized least squares on futures price residuals. The full derivation, assumptions, and limitations are in [docs/METHODOLOGY.md](docs/METHODOLOGY.md).
 
 ## Evaluation
 
@@ -63,13 +92,15 @@ For each horizon, we can calculate measures such as:
 - Bias in market expectations
 - Changes in forecast accuracy as the FOMC meeting approaches
 
+Forecast errors are computed on cumulative policy-rate changes through each meeting horizon, so the SOFR-policy-rate basis cancels out. Because futures prices may include risk premia, results are described as market-implied expectations rather than pure forecasts.
+
 As an additional validation exercise, we can compare futures-implied rates with the final realized settlement values of expired contracts.
 
 ## Comparison with a Simplified Approach
 
 We will also compare our methodology with a simplified SOFR curve-building approach similar to the one described in the course materials.
 
-This comparison will help measure the importance of correctly accounting for the timing of FOMC meetings and the exact settlement conventions of SOFR futures.
+This comparison will help measure the importance of correctly accounting for the timing of FOMC meetings and the exact settlement conventions of SOFR futures. Both methods are re-priced through the same SR1/SR3 contract pricing functions so their fits are compared on equal terms.
 
 In particular, we will examine whether a simplified smooth curve fails to capture the **step-like behavior of policy rates around FOMC meetings**.
 
@@ -97,15 +128,26 @@ The final project will produce:
 4. A comparison between the full methodology and a simplified SOFR curve approach.
 5. If completed, an intraday analysis of market reactions to FOMC announcements.
 
+## Repository Layout
+
+| Path | Contents |
+| --- | --- |
+| `sofr_data/` | Data collection and cleaning package |
+| `scripts/fetch_sofr_futures.py` | Pulls and cleans the SOFR futures data |
+| `tests/` | Tests, runnable without a Databento key |
+| `data/` | Pulled and processed data (gitignored) |
+| `reports/` | Generated data quality reports |
+| `DATA.md` | SOFR futures data dictionary and conventions |
+
 ## Project Roadmap
 
 The project will be developed in the following stages, with detailed tasks and progress tracked through GitHub Issues:
 
-1. Collect and clean SOFR futures data. ([#1](https://github.com/mmiah00/FINM37000-group6-project/issues/1))
+1. Collect and clean SOFR futures data, see [DATA.md](DATA.md). ([#1](https://github.com/mmiah00/FINM37000-group6-project/issues/1))
 2. Collect FOMC meeting and realized rate data. ([#2](https://github.com/mmiah00/FINM37000-group6-project/issues/2))
 3. Build the SOFR futures pricing framework. ([#3](https://github.com/mmiah00/FINM37000-group6-project/issues/3))
 4. Estimate market-implied Fed rate paths. ([#4](https://github.com/mmiah00/FINM37000-group6-project/issues/4))
-5. Evaluate Fed-path forecast accuracy. ([#5](https://github.com/mmiah00/FINM37000-group6-project/issues/5))
+5. Evaluate Fed-path forecast accuracy. ([#5](https://github.com/mmiah00/FINM37000-group6-project/issues/5)) See [FORECAST_EVAL.md](FORECAST_EVAL.md).
 6. Compare the full model with a simplified curve methodology. ([#6](https://github.com/mmiah00/FINM37000-group6-project/issues/6)) See [CURVE_COMPARE.md](CURVE_COMPARE.md).
 7. Create final visualizations and analysis. ([#7](https://github.com/mmiah00/FINM37000-group6-project/issues/7))
 8. If time permits, analyze intraday FOMC announcement reactions. ([#8](https://github.com/mmiah00/FINM37000-group6-project/issues/8))
@@ -123,7 +165,7 @@ The project will be developed in the following stages, with detailed tasks and p
 
 ## How to Run
 
-*The full pipeline described below is still planned. The [issue #6 comparison](CURVE_COMPARE.md) already runs on synthetic data without the course package or a Databento key.*
+*Status: SOFR futures data collection (see [Getting the SOFR futures data](#getting-the-sofr-futures-data) and [DATA.md](DATA.md)), FOMC meeting data, SR1/SR3 pricing, and the issue #5 forecast evaluation (see [FORECAST_EVAL.md](FORECAST_EVAL.md)) are implemented. The issue #6 comparison against a simplified SOFR curve (see [CURVE_COMPARE.md](CURVE_COMPARE.md)) also runs, on synthetic data, without the course package or a Databento key. Path estimation and final visualizations are still planned. These steps describe how the full project is intended to run once every stage is implemented.*
 
 1. Use Python 3.12 or newer.
 2. Install the project dependencies, including the course package [`finm37000`](https://github.com/pattersonem/finm37000-autumn-2026).

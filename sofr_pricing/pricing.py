@@ -84,7 +84,7 @@ def get_rate_blocks(fixings, start, end):
     dates = list(fixings.index)
     rates = [float(value) for value in fixings.values]
 
-    # The first fixing must be on or before the start day. (If the period starts 
+    # The first fixing must be on or before the start day. (If the period starts
     # on a Saturday, its rate comes from the Friday before.)
     if dates[0] > start:
         raise ValueError(

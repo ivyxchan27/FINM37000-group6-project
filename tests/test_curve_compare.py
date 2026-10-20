@@ -53,7 +53,9 @@ def test_elapsed_sr1_fixings_are_used_for_late_month_forecasts_and_paths():
     paths = implied_paths_for_plot(world, obs_date, horizon_days=3)
 
     assert result["full_model_error_bps"] == pytest.approx(0.0, abs=1e-9)
-    assert paths.loc[world.meeting_dates[0], "full_model"] == pytest.approx(4.5, abs=1e-9)
+    assert paths.loc[world.meeting_dates[0], "full_model"] == pytest.approx(
+        world.true_policy.loc[world.meeting_dates[0]], abs=1e-9
+    )
 
 
 def test_synthetic_history_covers_default_observations_for_early_month_meeting():

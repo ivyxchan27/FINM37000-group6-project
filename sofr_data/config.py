@@ -80,8 +80,8 @@ def resolve_api_key() -> str:
         FileNotFoundError: If neither source provides a key.
     """
     if API_KEY_FILE.exists():
-        lines = API_KEY_FILE.read_text().splitlines()
-        if lines and (key := lines[0].strip()):
+        key = API_KEY_FILE.read_text().splitlines()[0].strip()
+        if key:
             return key
 
     key = os.environ.get(API_KEY_ENV, "").strip()

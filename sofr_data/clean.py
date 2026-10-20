@@ -183,7 +183,7 @@ def extract_daily_statistics(statistics: pd.DataFrame) -> pd.DataFrame:
     interest = last_quantity(db.StatType.OPEN_INTEREST, "open_interest")
 
     # An outer merge keeps contracts that reported volume or open interest but
-    # no settlement, so the quality checks can see the gap.
+    # no final settlement, so the quality checks can see the gap.
     symbols = frame.groupby(keys, as_index=False).agg(symbol_any=("symbol", "last"))
     daily = (
         symbols.merge(settlement, on=keys, how="outer")

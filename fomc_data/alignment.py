@@ -37,7 +37,7 @@ def align_fomc_with_futures(futures, fomc):
     for column in ("trade_date", "reference_start", "reference_end"):
         futures[column] = pd.to_datetime(futures[column])
     fomc["meeting_date"] = pd.to_datetime(fomc["meeting_date"])
-
+    
     #handle FOMC inputs that do not explicitly include effective dates.
     if "effective_date" not in fomc.columns:
         fomc["effective_date"] = pd.NaT

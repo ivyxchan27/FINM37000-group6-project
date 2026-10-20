@@ -95,7 +95,7 @@ def check_duplicates(panel: pd.DataFrame, report: QualityReport) -> None:
 
 
 def check_missing_settlements(panel: pd.DataFrame, report: QualityReport) -> None:
-    """Flag live contracts with no settlement price.
+    """Flag live contracts with no final settlement price.
 
     Open interest above zero means the contract existed and was held that day,
     so a missing settlement is a real gap rather than an unlisted contract.
